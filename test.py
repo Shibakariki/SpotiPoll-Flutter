@@ -1,6 +1,9 @@
 import requests
 import json
 import base64
+from flask import Flask, render_template, request, redirect, url_for, make_response
+app = Flask(__name__)
+
 
 # Set up the Spotify API endpoints
 AUTH_URL = 'https://accounts.spotify.com/authorize'
@@ -13,14 +16,18 @@ RIKI_CLIENT_SECRET = "59c9a6dfb1b24f519ecf944098a83661"
 
 CLIENT_ID = RIKI_CLIENT_ID
 CLIENT_SECRET = RIKI_CLIENT_SECRET
+
 # Make a request to the /authorize endpoint to get an authorization code
 auth_code = requests.get(AUTH_URL, {
     'client_id': CLIENT_ID,
     'response_type': 'code',
-    'redirect_uri': 'https://open.spotify.com/collection/playlists',
-    'scope': 'playlist-modify-private',
 },verify=False)
 print(auth_code)
+
+@app.route('/')
+def home():
+    # return render_template('index.html')
+    return list(auth_code)[0]
 
 auth_header = base64.urlsafe_b64encode((CLIENT_ID + ':' + CLIENT_SECRET).encode('ascii'))
 headers = {
@@ -49,3 +56,7 @@ try:
     print(res.json())
 except:
     print("marche pas")
+
+# Open flask app
+if __name__ == "__main__":
+    app.run(debug=True, host='0.0.0.0', port=80)
