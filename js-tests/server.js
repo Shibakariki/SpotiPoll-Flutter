@@ -1,7 +1,7 @@
 const express = require("express");
+const app = express();
 const queryString = require("node:querystring");
 const axios = require("axios");
-const app = express();
 
 var accessToken = "";
 
@@ -47,6 +47,7 @@ app.get("/", (req, res) => {
 //this is the page user is redirected to after accepting data use on spotify's website
 //it does not have to be /account, it can be whatever page you want it to be
 app.get("/account", async (req, res) => {
+  console.log(req.query.code);
   const spotifyResponse = await axios.post(
       "https://accounts.spotify.com/api/token",
       queryString.stringify({
