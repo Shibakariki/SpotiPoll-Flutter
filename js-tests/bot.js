@@ -1,3 +1,4 @@
+//Discord imports
 const Discord = require('discord.js');
 const client = new Discord.Client({ intents: [
     Discord.GatewayIntentBits.Guilds,
@@ -7,6 +8,7 @@ const client = new Discord.Client({ intents: [
   ]})
 const token = "MTEyODc2NjkzOTA0MTM3MDEzMg.GlZbVJ.Il5lTJxwCaqlQmIthEpoBIw3OST2pohDRAJdTY";
 
+//Spotify/API imports
 const queryString = require("node:querystring");
 const axios = require("axios");
 
