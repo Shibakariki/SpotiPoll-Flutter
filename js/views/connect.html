@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <!-- <link rel="stylesheet" href="css/style.css"> -->
+    <script type="module">
+        import {clientID, clientSecret, base64ClientID, redirectURI, scope } from "./static/var.js";
+        document.getElementById("cc").href = "https://accounts.spotify.com/authorize?client_id=" + clientID +
+               "&response_type=code&redirect_uri="+redirectURI+"&scope="+scope;
+    </script>
+</head>
+
+<body>
+    <div>
+        <a id="cc">Connect</a>        
+    </div>
+</body>
+
+</html>
