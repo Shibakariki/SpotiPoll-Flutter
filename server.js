@@ -4,6 +4,8 @@ const queryString = require("node:querystring");
 const axios = require("axios");
 const { get } = require("node:http");
 
+const fs = require("fs");
+
 const nameDict = {
   "uudinn": "Axel",
   "11183209297": "Céline",
@@ -39,6 +41,14 @@ class Track {
   }  
 }  
 
+class User {
+  constructor(id,vote,push_vote) {
+    this.id = id;
+    this.vote = vote;
+    this.push_vote = push_vote;
+  }
+}
+
 var accessToken = "";
 var allTrack = [];
 
@@ -50,9 +60,48 @@ app.use("/static", express.static('./views/static/'));
 
 //this page contains the link to the spotify authorization page
 //contains custom url queries that pertain to my specific app
-app.get("/", (req, res) => {
-  res.redirect("/track_list");
+app.get("/", async (req, res) => {
+  var userData = [];
+  if ( fs.existsSync('./views/static/fichier.json')) {
+    fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
+      if (err) {
+        console.error(err)
+        return
+      }
+      parseJson = JSON.parse(data);
+      parseJson.forEach(user => {
+        userData.push(new User(user.id, user.vote, user.push_vote));
+      });
+
+      addUser(userData,"111","0","0");
+
+    });
+  }
+  else {
+    console.log("Le fichier n'existe pas");
+    addUser(userData,"111","0","0");
+  }
+  
+
+  //res.redirect("/track_list");
 });
+
+function addUser(userData,id,vote,push_vote) {
+  userData.push(new User(id,vote,push_vote));
+  jsonData = JSON.stringify(userData, null, 2);
+
+  // Chemin du fichier où nous voulons écrire les données JSON
+  const filePath = './views/static/fichier.json';
+
+  // Écrire les données JSON dans le fichier
+  fs.writeFile(filePath, jsonData, 'utf8', (err) => {
+    if (err) {
+      console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
+    } else {
+      console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+    }
+  });
+}
 
 app.get("/poll", (req, res) => {
   if (allTrack.length > 0) {
