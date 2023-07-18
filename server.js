@@ -61,6 +61,11 @@ app.use("/static", express.static('./views/static/'));
 //this page contains the link to the spotify authorization page
 //contains custom url queries that pertain to my specific app
 app.get("/", async (req, res) => {
+  res.sendFile(path+"connect.html");
+  //res.redirect("/track_list");
+});
+
+function testbdd() {
   var userData = [];
   if ( fs.existsSync('./views/static/fichier.json')) {
     fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
@@ -81,10 +86,7 @@ app.get("/", async (req, res) => {
     console.log("Le fichier n'existe pas");
     addUser(userData,"111","0","0");
   }
-  
-
-  //res.redirect("/track_list");
-});
+}
 
 function addUser(userData,id,vote,push_vote) {
   userData.push(new User(id,vote,push_vote));
@@ -115,54 +117,107 @@ app.get("/poll", (req, res) => {
 });
 
 app.get("/track_list", (req, res) => {
-  if (req.query.code != undefined) {
-    if (allTrack.length > 0) {
-      let tableHTML = `
-        <style>
-          table {
-            border-collapse: collapse;
-            width: 80%;
-            margin: auto;
-            font-family: Verdana, sans-serif, Helvetica, Arial;
+  if (allTrack.length > 0) {
+    let tableHTML = `
+      <style>
+        body {
+          background: linear-gradient(95deg, #00db7f 0%,#1DB954 40%,#03903e 100%);
+          margin: 0;
+          padding: 0;
+          font-family: Verdana, sans-serif, Helvetica, Arial;
+        }
+        #btns{
+          text-align: center;
+          display: block;
+          margin: 1%;
+        }
+        #sondage {
+          background-color: #696969;
+          border: none;
+          color: #FFFFFF;
+          cursor: pointer;
+          font-size: 17px;
+          font-weight: 700;
+          font-family: Verdana, sans-serif, Helvetica, Arial;
+          line-height: 41px;
+          padding: 15px 40px;
+          text-align: center;
+          text-decoration: none;
+          text-transform: uppercase;
+          white-space: nowrap;
+          } 
+        #sondage:hover {
+          background-color: #03903e;
+          transition: ease-in-out 0.5s;
+        }
+        #refresh {
+          background-color: #696969;
+          border: none;
+          color: #FFFFFF;
+          cursor: pointer;
+          font-size: 17px;
+          font-weight: 700;
+          font-family: Verdana, sans-serif, Helvetica, Arial;
+          line-height: 41px;
+          padding: 15px 40px;
+          text-align: center;
+          text-decoration: none;
+          text-transform: uppercase;
+          white-space: nowrap;
           }
-          th, td {
-            padding: 8px;
-            text-align: center; /* Centrer le texte horizontalement */
-            vertical-align: middle; /* Centrer le contenu verticalement */
-          }
-          th {
-            background-color: black;
-            color: white;
-          }
-          tr:nth-child(even) {
-            background-color: #f2f2f2;
-          }
-        </style>
-        <table border="1">
+        #refresh:hover {
+          background-color: #EE4B2B;
+          transition: ease-in-out 0.5s;
+        }
+        table {
+          margin: 0 auto;
+          text-align: left;
+          color: white;
+          cursor: default;
+          border-spacing: 0;
+          border-collapse: collapse;
+          width: 80%;
+          font-family: Verdana, sans-serif, Helvetica, Arial;
+        }
+        th, td {
+          padding: 8px;
+          text-align: center;
+          vertical-align: middle;
+        }
+        th {
+          background-color: #ffffff44;
+        }
+        tr:nth-child(even) {
+          background-color: #ffffff24;
+        }
+        tr:nth-child(odd) {
+          background-color: #ffffff11;
+        }
+        td:hover {
+          background-color: #ffffff44;
+        }
+      </style>
+      <div id="btns" style="text-align: center;">
+        <a id="sondage" href="/poll">Sondage du jour</a>
+        <a id="refresh" href='https://accounts.spotify.com/authorize?client_id=${clientID}&response_type=code&redirect_uri=${redirectURI}&scope=${scope}'>Refresh</a>
+      </div>
+      <div>
+        <table>
           <tr>
             <th>Titre</th>
             <th>Auteur</th>
             <th>Ajouté par</th>
             <th>Supprimer</th>
           </tr>
-      `;
+    `;
 
-      allTrack.forEach(item => {
-        tableHTML += `<tr><td>${item.name}</td><td>${item.artist}</td><td>${item.adder}</td><td><input type="checkbox"></td></tr>`;
-      });
+    allTrack.forEach(item => {
+      tableHTML += `<tr><td>${item.name}</td><td>${item.artist}</td><td>${item.adder}</td><td><input type="checkbox"></td></tr>`;
+    });
 
-      tableHTML += '</table>';
-      res.send(tableHTML);
-    }
+    tableHTML += '</div> </table>';
+    res.send(tableHTML);
   }
-  else {
-    res.sendFile(path+"connect.html");
-    // res.send(
-    //   "<a href='https://accounts.spotify.com/authorize?client_id=" +
-    //     clientID +
-    //     "&response_type=code&redirect_uri="+redirectURI+"&scope="+scope+"'>Sign in</a>"
-    // );
-  }    
 });
 
 //this is the page user is redirected to after accepting data use on spotify's website
@@ -183,7 +238,7 @@ app.get("/account", async (req, res) => {
     // var track_id = track_to_delete[0]["id"];
     // await deleteTrack(res,accessToken,playlist_id,track_id);
     console.log("the end");
-    res.redirect('/track_list?code='+req.query.code);
+    res.redirect('/track_list');
 })
 
 async function isTokenValid(res,accessToken) {

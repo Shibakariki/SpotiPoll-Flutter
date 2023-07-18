@@ -9,12 +9,57 @@
         document.getElementById("cc").href = "https://accounts.spotify.com/authorize?client_id=" + clientID +
                "&response_type=code&redirect_uri="+redirectURI+"&scope="+scope;
     </script>
+    <style>
+        html, body {
+            background: linear-gradient(95deg, #00db7f 0%,#1DB954 40%,#03903e 100%);
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Verdana, sans-serif, Helvetica, Arial;
+        }
+        .center-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #cc {
+            background-color: #696969;
+            border: none;
+            color: #FFFFFF;
+            cursor: pointer;
+            font-size: 17px;
+            font-weight: 700;
+            font-family: Verdana, sans-serif, Helvetica, Arial;
+            line-height: 41px;
+            padding: 15px 40px;
+            text-align: center;
+            text-decoration: none;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        #cc:hover {
+            /* background-color: #4b4b4b; */
+            background-color: #00B44B;
+            border: 1px solid #FFFFFF;
+            transition: all 0.5s ease-in-out;
+        }
+        #spotify-logo {
+            position: relative;
+            height: 35px;
+            top: 11px;
+            margin-left: 10px;
+        }
+    </style>
 </head>
 
 <body>
-    <div>
-        <a id="cc">Connect</a>        
-    </div>
+    <div class="center-container">
+        <a id="cc" href="https://www.spotify.com/connect"> Connect to Spotify
+          <img src="static/spotify.png" alt="Spotify Logo" id="spotify-logo">
+        </a>
+      </div>
 </body>
 
 </html>
