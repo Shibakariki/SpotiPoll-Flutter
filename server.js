@@ -106,6 +106,23 @@ function addUser(userData,id,vote,push_vote) {
   });
 }
 
+function addTrackList(all_tracks) {
+  jsonData = JSON.stringify(all_tracks, null, 2);
+
+  // Chemin du fichier où nous voulons écrire les données JSON
+  const filePath = './views/static/fichier.json';
+
+  // Écrire les données JSON dans le fichier
+  fs.writeFile(filePath, jsonData, 'utf8', (err) => {
+    if (err) {
+      console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
+    } else {
+      console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+    }
+  });
+}
+
+
 app.get("/poll", (req, res) => {
   if (allTrack.length > 0) {
     const maxValue = allTrack.length - 1;
@@ -233,6 +250,9 @@ app.get("/account", async (req, res) => {
 
     playlist_tracks = await getPlaylistTracks(res,accessToken,playlist_id,setToTrack=true); // setToTrack=true to get the tracks as Track objects
     allTrack = playlist_tracks;
+
+    addTrackList(allTrack);
+
     // console.log(playlist_tracks);
     const track_to_delete = playlist_tracks.filter((item) => item.name === "Hello (feat. A Boogie Wit da Hoodie)");
     
