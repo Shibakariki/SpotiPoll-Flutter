@@ -51,6 +51,7 @@ class User {
 }
 
 var accessToken = "";
+var username = "";
 var allTrack = [];
 
 app.listen(1443, () => {
@@ -66,80 +67,74 @@ app.get("/", async (req, res) => {
   //res.redirect("/track_list");
 });
 
-function testbdd() {
-  var userData = [];
-  if ( fs.existsSync('./views/static/fichier.json')) {
-    fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
-      if (err) {
-        console.error(err)
-        return
-      }
-      parseJson = JSON.parse(data);
-      parseJson.forEach(user => {
-        userData.push(new User(user.id, user.vote, user.push_vote));
-      });
-
-      addUser(userData,"111","0","0");
-
-    });
-  }
-  else {
-    console.log("Le fichier n'existe pas");
-    addUser(userData,"111","0","0");
-  }
-}
-
-function addUser(userData,id,vote,push_vote) {
-  userData.push(new User(id,vote,push_vote));
-  jsonData = JSON.stringify(userData, null, 2);
-
-  // Chemin du fichier où nous voulons écrire les données JSON
-  const filePath = './views/static/fichier.json';
-
-  // Écrire les données JSON dans le fichier
-  fs.writeFile(filePath, jsonData, 'utf8', (err) => {
+function addUser(userId) {
+  var jsonData = [];
+  if ( !fs.existsSync('./views/static/fichier.json')) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
+  fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
     if (err) {
-      console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
-    } else {
-      console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+      console.error(err)
+      return
     }
+    parseJson = JSON.parse(data);
+    var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+    var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
+
+    already_known = false;
+    usersData.forEach(user => {
+      if (user.id == userId) {
+        already_known = true;
+      }
+    });
+    if (!already_known) {
+      usersData.push(new User(userId,0,0));
+    }
+    combineJson = {"users":usersData,"tracks":tracksData}
+    jsonData = JSON.stringify(combineJson, null, 2);
+  
+    // Chemin du fichier où nous voulons écrire les données JSON
+    const filePath = './views/static/fichier.json';
+  
+    // Écrire les données JSON dans le fichier
+    fs.writeFile(filePath, jsonData, 'utf8', (err) => {
+      if (err) {
+        console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
+      } else {
+        console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+      }
+    });
   });
 }
 
 function addTrackList(all_tracks) {
   var jsonData = [];
-  if ( fs.existsSync('./views/static/fichier.json')) {
-    fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
-      if (err) {
-        console.error(err)
-        return
-      }
-      parseJson = JSON.parse(data);
-      var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
-      var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
-      // userData = []
+  if ( !fs.existsSync('./views/static/fichier.json')) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
+  fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
+    if (err) {
+      console.error(err)
+      return
+    }
+    parseJson = JSON.parse(data);
+    var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+    var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
 
-      // var tracks_list = {"tracks":allTrack}
-      // jsonData = JSON.stringify(all_tracks, null, 2);
-    
-      // // Chemin du fichier où nous voulons écrire les données JSON
-      // const filePath = './views/static/fichier.json';
-    
-      // // Écrire les données JSON dans le fichier
-      // fs.writeFile(filePath, jsonData, 'utf8', (err) => {
-      //   if (err) {
-      //     console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
-      //   } else {
-      //     console.log('Les données ont été écrites avec succès dans le fichier JSON.');
-      //   }
-      // });
-      
+    allTrack.forEach(track => {
+      tracksData.push(new Track(track.id,track.name,track.artist,track.adder,track.url));
     });
-  }
-  else {
-    console.log("Le fichier n'existe pas");
-    addUser(userData,"111","0","0");
-  }
+    combineJson = {"users":usersData,"tracks":tracksData}
+    jsonData = JSON.stringify(combineJson, null, 2);
+  
+    // Chemin du fichier où nous voulons écrire les données JSON
+    const filePath = './views/static/fichier.json';
+  
+    // Écrire les données JSON dans le fichier
+    fs.writeFile(filePath, jsonData, 'utf8', (err) => {
+      if (err) {
+        console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
+      } else {
+        console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+      }
+    });
+  });
 }
 
 
@@ -262,6 +257,8 @@ app.get("/track_list", (req, res) => {
 //it does not have to be /account, it can be whatever page you want it to be
 app.get("/account", async (req, res) => {
     const accessToken = await getAccessToken(req.query.code, res);
+    const userId = await getUserId(res,accessToken);
+    addUser(userId);
 
     // all_playlists = await getAllPlaylist(res, accessToken);
     // const playlist_id = all_playlists.data["items"].filter((item) => item.name === "WtfCanadianTapeN°001")[0]["id"]; 
@@ -320,6 +317,24 @@ async function getAccessToken(code,res) {
   var accessToken = spotifyResponse.data.access_token;
   return accessToken;
 }
+
+async function getUserId(res,accessToken) {
+  const userid = await axios.get(
+    "https://api.spotify.com/v1/me",
+    {
+      headers: {
+        Authorization: "Bearer " + accessToken,
+      },
+    }
+  );
+
+  if (all_playlists.data.error) {
+    res.send("Error: " + all_playlists.data.error);
+    res.redirect('/');
+  }
+  return userid.data["id"];
+}
+
 
 async function getAllPlaylist(res,accessToken) {
   const all_playlists = await axios.get(
