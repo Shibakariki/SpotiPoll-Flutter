@@ -115,7 +115,8 @@ function addTrackList(all_tracks) {
         return
       }
       parseJson = JSON.parse(data);
-      console.log(parseJson)
+      var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+      var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
       // userData = []
 
       // var tracks_list = {"tracks":allTrack}
