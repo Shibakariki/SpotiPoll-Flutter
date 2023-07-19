@@ -107,19 +107,38 @@ function addUser(userData,id,vote,push_vote) {
 }
 
 function addTrackList(all_tracks) {
-  jsonData = JSON.stringify(all_tracks, null, 2);
+  var jsonData = [];
+  if ( fs.existsSync('./views/static/fichier.json')) {
+    fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
+      if (err) {
+        console.error(err)
+        return
+      }
+      parseJson = JSON.parse(data);
+      console.log(parseJson)
+      // userData = []
 
-  // Chemin du fichier où nous voulons écrire les données JSON
-  const filePath = './views/static/fichier.json';
-
-  // Écrire les données JSON dans le fichier
-  fs.writeFile(filePath, jsonData, 'utf8', (err) => {
-    if (err) {
-      console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
-    } else {
-      console.log('Les données ont été écrites avec succès dans le fichier JSON.');
-    }
-  });
+      // var tracks_list = {"tracks":allTrack}
+      // jsonData = JSON.stringify(all_tracks, null, 2);
+    
+      // // Chemin du fichier où nous voulons écrire les données JSON
+      // const filePath = './views/static/fichier.json';
+    
+      // // Écrire les données JSON dans le fichier
+      // fs.writeFile(filePath, jsonData, 'utf8', (err) => {
+      //   if (err) {
+      //     console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
+      //   } else {
+      //     console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+      //   }
+      // });
+      
+    });
+  }
+  else {
+    console.log("Le fichier n'existe pas");
+    addUser(userData,"111","0","0");
+  }
 }
 
 
