@@ -314,7 +314,7 @@ async function getPlaylistTracks(res,accessToken,playlist_id,setToTrack=false) {
   }
   if (setToTrack) {
     var all_tracks = playlist_tracks.data["items"];
-    all_tracks = all_tracks.map((item) => new Track(item["track"]["id"], item["track"]["name"], item["track"]["artists"][0]["name"], nameDict[item["added_by"]["id"],item["track"]["external_urls"]["spotify"]]));
+    all_tracks = all_tracks.map((item) => new Track(item["track"]["id"], item["track"]["name"], item["track"]["artists"][0]["name"], nameDict[item["added_by"]["id"]],item["track"]["external_urls"]["spotify"]));
     return all_tracks;
   }
   else {
