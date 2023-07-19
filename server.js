@@ -33,11 +33,12 @@ var router = express.Router();
 var path = __dirname + '/views/'; // this folder should contain your html files.
 
 class Track {
-  constructor(id, name, artist, adder) {
+  constructor(id, name, artist, adder,url) {
     this.id = id;
     this.name = name;
     this.artist = artist;
     this.adder = adder;
+    this.url = url;
   }  
 }  
 
@@ -212,7 +213,7 @@ app.get("/track_list", (req, res) => {
     `;
 
     allTrack.forEach(item => {
-      tableHTML += `<tr><td>${item.name}</td><td>${item.artist}</td><td>${item.adder}</td><td><input type="checkbox"></td></tr>`;
+      tableHTML += `<tr><td>${item.name}</td><td>${item.artist}</td><td>${item.adder}</td><td><a href="${item.url}">Ecouter</a></td></tr>`;
     });
 
     tableHTML += '</div> </table>';
@@ -313,7 +314,7 @@ async function getPlaylistTracks(res,accessToken,playlist_id,setToTrack=false) {
   }
   if (setToTrack) {
     var all_tracks = playlist_tracks.data["items"];
-    all_tracks = all_tracks.map((item) => new Track(item["track"]["id"], item["track"]["name"], item["track"]["artists"][0]["name"], nameDict[item["added_by"]["id"]]));
+    all_tracks = all_tracks.map((item) => new Track(item["track"]["id"], item["track"]["name"], item["track"]["artists"][0]["name"], nameDict[item["added_by"]["id"],item["track"]["external_urls"]["spotify"]]));
     return all_tracks;
   }
   else {
