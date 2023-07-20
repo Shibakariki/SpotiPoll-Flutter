@@ -10,7 +10,8 @@ const fs = require("fs");
 const nameDict = {
   "uudinn": "Axel",
   "11183209297": "Céline",
-  "8oyik21m36g0xygzkhomv46ah": "Maxime"
+  "8oyik21m36g0xygzkhomv46ah": "Maxime",
+  "312qcpi3foqze5fnflaounnkpul4": "Le goat"
 }
 
 const clientID = "41eb08913f8b43e98d5b1c498f126541";
@@ -54,6 +55,7 @@ class User {
 var accessToken = "";
 var username = "";
 var allTrack = [];
+var current_user = new User("",0,0);
 
 app.listen(1443, () => {
   console.log("App is listening on port 1443! localhost:1443\n");
@@ -61,19 +63,19 @@ app.listen(1443, () => {
 
 app.use("/static", express.static('./views/static/'));
 
+// #region Get Authorization and Add Users
+
 //this page contains the link to the spotify authorization page
 //contains custom url queries that pertain to my specific app
 app.get("/", async (req, res) => {
-  //res.sendFile(path+"connect.html");
+  res.sendFile(path+"connect.html");
   //res.redirect("/track_list");
-  const maxValue = 60;
-  const randomNumber = generateRandomNumber(maxValue);
-  console.log(randomNumber);
-  res.send("noice")
+
 });
 
 function addUser(userId) {
   var jsonData = [];
+  var user = new User(userId,0,0);
   if ( !fs.existsSync('./views/static/fichier.json')) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
   fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
     if (err) {
@@ -93,6 +95,9 @@ function addUser(userId) {
     if (!already_known) {
       usersData.push(new User(userId,0,0));
     }
+    else {
+      user = usersData.filter((item) => item.id === userId)[0];
+    }
     combineJson = {"users":usersData,"tracks":tracksData}
     jsonData = JSON.stringify(combineJson, null, 2);
   
@@ -104,13 +109,15 @@ function addUser(userId) {
       if (err) {
         console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
       } else {
-        console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+        //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
       }
     });
+    username = nameDict[userId];
+    current_user = user;
   });
 }
 
-function setTrackList(all_tracks) {
+function modifyUser(user) {
   var jsonData = [];
   if ( !fs.existsSync('./views/static/fichier.json')) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
   fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
@@ -120,14 +127,12 @@ function setTrackList(all_tracks) {
     }
     parseJson = JSON.parse(data);
     var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
-    var tracksData = [];
+    var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
 
-    allTrack.forEach(track => {
-      tracksData.push(new Track(track.id,track.name,track.artist,track.adder,track.url));
-    });
+    usersData.filter((item) => item.id === user.id)[0] = user;
     combineJson = {"users":usersData,"tracks":tracksData}
     jsonData = JSON.stringify(combineJson, null, 2);
-  
+
     // Chemin du fichier où nous voulons écrire les données JSON
     const filePath = './views/static/fichier.json';
   
@@ -136,23 +141,15 @@ function setTrackList(all_tracks) {
       if (err) {
         console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
       } else {
-        console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+        //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
       }
     });
   });
 }
 
-app.get("/poll", (req, res) => {
-  if (allTrack.length > 0) {
-    // const maxValue = allTrack.length - 1;
-    const maxValue = 57;
-    const randomNumber = generateRandomNumber(maxValue);
-    console.log(randomNumber);
-    const track = allTrack[randomNumber];
-    console.log(track);
-    res.send("noice")
-  }
-});
+// #endregion
+
+// #region Affichage track list and Add Track
 
 app.get("/track_list", (req, res) => {
   let communHTML = `
@@ -280,6 +277,37 @@ app.get("/track_list", (req, res) => {
   }
 });
 
+function setTrackList(all_tracks) {
+  var jsonData = [];
+  if ( !fs.existsSync('./views/static/fichier.json')) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
+  fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
+    if (err) {
+      console.error(err)
+      return
+    }
+    parseJson = JSON.parse(data);
+    var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+    var tracksData = [];
+
+    allTrack.forEach(track => {
+      tracksData.push(new Track(track.id,track.name,track.artist,track.adder,track.url));
+    });
+    combineJson = {"users":usersData,"tracks":tracksData}
+    jsonData = JSON.stringify(combineJson, null, 2);
+  
+    // Chemin du fichier où nous voulons écrire les données JSON
+    const filePath = './views/static/fichier.json';
+  
+    // Écrire les données JSON dans le fichier
+    fs.writeFile(filePath, jsonData, 'utf8', (err) => {
+      if (err) {
+        console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
+      } else {
+        //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+      }
+    });
+  });
+}
 
 function showAllTrack(res,communHTML) {
   if (allTrack.length > 0) {
@@ -289,7 +317,7 @@ function showAllTrack(res,communHTML) {
           <tr>
             <th>Titre</th>
             <th>Auteur</th>
-            <th>Ajouté par</th>
+            <th>Ajoutée par</th>
             <th>Ecouter</th>
           </tr>
     `;
@@ -305,6 +333,10 @@ function showAllTrack(res,communHTML) {
     res.send(communHTML + "<h1>Aucun titre</h1>");
   }
 }
+
+// #endregion
+
+// #region Get tracks from Spotify
 
 //this is the page user is redirected to after accepting data use on spotify's website
 //it does not have to be /account, it can be whatever page you want it to be
@@ -328,7 +360,6 @@ app.get("/account", async (req, res) => {
     
     // var track_id = track_to_delete[0]["id"];
     // await deleteTrack(res,accessToken,playlist_id,track_id);
-    console.log("the end");
     res.redirect('/track_list');
 })
 
@@ -453,6 +484,247 @@ async function deleteTrack(res,accessToken,playlist_id,track_id) {
   }
 }
 
+// #endregion
+
+// #region Poll
+
+app.get("/poll", (req, res) => {
+  if (allTrack.length > 0) {
+    const maxValue = allTrack.length - 1;
+    const randomNumber = generateRandomNumber(maxValue);
+    const track = allTrack[randomNumber];
+    console.log(current_user);
+    res.send(`<style>
+      $fontStack: Verdana, sans-serif, Helvetica, Arial
+      $primaryColor: #978ed3
+      $primaryBoldColor: #8378ca
+      html, body {
+        width: 100%;
+        height: 100%;
+      }
+      
+      body {
+        width: 100%;
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        background: linear-gradient(95deg, #00db7f 0%,#1DB954 40%,#03903e 100%);
+        margin: 0;
+        padding: 0;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+      }
+      
+      #container {
+        perspective: 25px;
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+      }
+      
+      .beatiful-card {
+        display: flex;
+        width: 400px;
+        height: 185px;
+        position: relative;
+        border-radius: 20px;
+        background: #fff;
+        transition: transform 0.5s;
+        -webkit-transition: transform 0.5s;
+        box-shadow: 0 30px 35px -14px rgba(111, 208, 50, 0.58);
+      }
+      .beatiful-card:after, .beatiful-card:before {
+        content: " ";
+        position: absolute;
+        bottom: -13px;
+        left: 10px;
+        right: 10px;
+        margin: 0 5px;
+        background: #b8bd8d4f;
+        z-index: -3;
+        height: 13px;
+        transition: bottom ease 0.1s;
+        border-bottom-left-radius: 14px;
+        border-bottom-right-radius: 14px;
+      }
+      .beatiful-card:after {
+        background: rgba(184, 189, 141, 0.25);
+        height: 21px;
+        bottom: -22px;
+        right: 25px;
+        left: 25px;
+      }
+      .beatiful-card:hover:before {
+        bottom: -13px;
+      }
+      .beatiful-card:hover:after {
+        bottom: -22px;
+      }
+      .beatiful-card:hover img {
+        transform: scale(1.06);
+      }
+      .beatiful-card .holderPart {
+        display: flex;
+        width: 100%;
+        flex-wrap: wrap;
+      }
+      .beatiful-card .holderPart .title, .beatiful-card .holderPart .subtitle {
+        font-size: 22px;
+        padding: 0 16px;
+        position: relative;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        display: flex;
+        z-index: 5;
+        width: 88%;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        transition: transform 0.4s ease, filter 0.4s ease, -webkit-transform 0.4s ease, -webkit-filter 0.4s ease;
+        justify-content: flex-start;
+        margin: 10px 0px 0px 0px;
+      }
+      .beatiful-card .holderPart .subtitle {
+        margin: 0px 0px 15px 0px;
+      }
+      .beatiful-card .holderPart .YesVote, .beatiful-card .holderPart .NoVote {
+        color: #fff;
+        padding: 8px 11px 12px 22px;
+        margin: 0px 7%;
+        background: #978ed3;
+        border-radius: 20px;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        cursor: pointer;
+        box-shadow: 0 6px 14px -4px rgba(54, 55, 149, 0.42);
+        position: relative;
+        width: 27%;
+        top: -15px;
+        display: flex;
+        align-items: center;
+      }
+      .beatiful-card .holderPart .YesVote:hover, .beatiful-card .holderPart .NoVote:hover {
+        background: #8378ca;
+      }
+      .beatiful-card .holderPart .YesVote:hover i, .beatiful-card .holderPart .NoVote:hover i {
+        transform: scale(1.08);
+      }
+      .beatiful-card .holderPart .YesVote i, .beatiful-card .holderPart .NoVote i {
+        background: rgba(0, 0, 0, 0.5);
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        padding: 6px 6px;
+        left: 50px;
+        border-radius: 100%;
+        position: relative;
+        transition: transform ease-in-out 0.3s;
+        top: 2px;
+        font-style: normal;
+      }
+      .beatiful-card .holderPart .adder {
+        height: 10px;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        font-size: 14px;
+        z-index: 1;
+        width: 42%;
+        top: -12%;
+        left: 5%;
+        position: relative;
+        margin: 15px 0px 20px 0px;
+      }
+      .beatiful-card .holderPart .link {
+        height: 10px;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        font-size: 14px;
+        z-index: 1;
+        width: 42%;
+        top: -12%;
+        left: 32%;
+        position: relative;
+        margin: 15px 0px 20px 0px;
+      }
+      .beatiful-card .holderPart .link .url {
+        text-decoration: none;
+        color: #00A6ED;
+        border: 1px solid #00A6ED;
+        border-radius: 5px;
+        padding: 2px;
+        background-color: #ffffff99;
+      }
+      .yesno {
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        display: block;
+        width: 10px;
+        margin: 0;
+        position: relative;
+      }
+      .icon {
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        position: relative;
+        margin: 0;
+        font-size: 20px;
+        top: -2px;
+      }
+      #Info {
+        width: 100%;
+        height: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        top: -25%;
+        color: #fff;
+      }
+      #info-title {
+        font-size: 30px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      #info-desc {
+        font-size: 20px;
+        font-weight: 400;
+        margin: 0;
+        padding: 0;
+      }
+      #info-vote {
+        font-size: 20px;
+        font-weight: 400;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    
+    <div id="Info">
+      <h1 id="info-title">Sondage du jour</h1>
+      <p id="info-desc">${username}, tu as jusqu'à 23h59 pour voter sur le maintien ou la suppression de la musique dans la playlist. (UTC+2, Paris)</p>
+      <p id="info-vote">${current_user.vote == 0?"Tu n'as pas encore voté":"Tu as voté, mais tu peux modifier ton vote"}</p>
+    </div>
+    <div id="container">
+      <div class="beatiful-card">
+        <div class="holderPart">
+          <h3 class="title">${track.name}</h3>
+          <h4 class="subtitle">par ${track.artist}</h4>
+          <p class="adder">Ajoutée par ${track.adder}</p>
+          <p class="link"><a class="url" href="${track.url}">Ecouter ▶️</a></p>
+          <div class="YesVote" onclick="location.href='/vote?vote=yes';">
+            <p class="yesno">Oui</p>
+            <i class="zmdi zmdi-favorite">
+              <p class="icon">👍</p>
+            </i>
+          </div>
+          <div class="NoVote"  onclick="location.href='/vote?vote=no';">            
+            <p class="yesno">Non</p>
+            <i class="zmdi zmdi-favorite">
+              <p class="icon">👎</p>
+            </i>
+          </div>
+        </div>
+      </div>
+    </div>
+    `);
+  }
+});
+
 function generateRandomNumber(maxValue) {
   const date = new Date();
   // Obtenir le jour de la date (1 à 31)
@@ -473,3 +745,18 @@ function generateRandomNumber(maxValue) {
   // Renvoyer un nombre aléatoire entre 0 et 1 pour le jour donné
   return Math.round((randomNumber / (Math.pow(2, 256) - 1))*maxValue);
 }
+
+app.get("/vote", (req, res) => {
+  console.log(req.query.vote);
+  console.log(current_user.vote);
+  if (req.query.vote == "yes") {
+    current_user.vote = 1;
+  }
+  else if (req.query.vote == "no") {
+    current_user.vote = -1;
+  }
+  modifyUser(current_user);
+  res.redirect("/poll");
+});  
+
+// #endregion
