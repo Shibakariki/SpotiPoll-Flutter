@@ -3,6 +3,7 @@ const app = express();
 const queryString = require("node:querystring");
 const axios = require("axios");
 const { get } = require("node:http");
+const CryptoJS = require("crypto-js");
 
 const fs = require("fs");
 
@@ -63,8 +64,12 @@ app.use("/static", express.static('./views/static/'));
 //this page contains the link to the spotify authorization page
 //contains custom url queries that pertain to my specific app
 app.get("/", async (req, res) => {
-  res.sendFile(path+"connect.html");
+  //res.sendFile(path+"connect.html");
   //res.redirect("/track_list");
+  const maxValue = 60;
+  const randomNumber = generateRandomNumber(maxValue);
+  console.log(randomNumber);
+  res.send("noice")
 });
 
 function addUser(userId) {
@@ -139,7 +144,8 @@ function setTrackList(all_tracks) {
 
 app.get("/poll", (req, res) => {
   if (allTrack.length > 0) {
-    const maxValue = allTrack.length - 1;
+    // const maxValue = allTrack.length - 1;
+    const maxValue = 57;
     const randomNumber = generateRandomNumber(maxValue);
     console.log(randomNumber);
     const track = allTrack[randomNumber];
@@ -449,17 +455,21 @@ async function deleteTrack(res,accessToken,playlist_id,track_id) {
 
 function generateRandomNumber(maxValue) {
   const date = new Date();
-  const year = date.getFullYear();
-  const month = date.getMonth();
+  // Obtenir le jour de la date (1 à 31)
   const day = date.getDate();
 
-  // Combinez les parties de la date pour obtenir une chaîne unique qui changera chaque jour
-  const dateString = `${year}-${month}-${day}`;
+  // Convertir la date en une chaîne de caractères au format "YYYY-MM-DD"
+  const dateString = date.toISOString().slice(0, 10);
 
-  // Utilisez la chaîne de date comme graine (seed) pour générer un nombre aléatoire
-  const seed = parseInt(dateString, 36);
-  const random = (seed * 9301 + 49297) % 233280;
+  // Concaténer le jour à la date
+  const dataToHash = dateString + day;
 
-  // Normalisez le nombre aléatoire entre 0 et maxValue
-  return Math.floor((random / 233280) * (maxValue + 1));
+  // Calculer le hachage SHA-256
+  const hash = CryptoJS.SHA256(dataToHash);
+
+  // Convertir le hachage en un nombre décimal
+  const randomNumber = parseInt(hash.toString(), 16);
+
+  // Renvoyer un nombre aléatoire entre 0 et 1 pour le jour donné
+  return Math.round((randomNumber / (Math.pow(2, 256) - 1))*maxValue);
 }
