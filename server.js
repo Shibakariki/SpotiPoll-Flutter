@@ -129,7 +129,11 @@ function modifyUser(user) {
     var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
     var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
 
-    usersData.filter((item) => item.id === user.id)[0] = user;
+    const indexToUpdate = usersData.findIndex((item) => item.id === user.id);
+
+    if (indexToUpdate !== -1) {
+      usersData[indexToUpdate] = user;
+    }
     combineJson = {"users":usersData,"tracks":tracksData}
     jsonData = JSON.stringify(combineJson, null, 2);
 
@@ -493,11 +497,10 @@ app.get("/poll", (req, res) => {
     const maxValue = allTrack.length - 1;
     const randomNumber = generateRandomNumber(maxValue);
     const track = allTrack[randomNumber];
-    console.log(current_user);
     res.send(`<style>
       $fontStack: Verdana, sans-serif, Helvetica, Arial
-      $primaryColor: #978ed3
-      $primaryBoldColor: #8378ca
+      $primaryColor: #00db7f
+      $primaryBoldColor: #03903e
       html, body {
         width: 100%;
         height: 100%;
@@ -516,6 +519,50 @@ app.get("/poll", (req, res) => {
         margin: 0;
         padding: 0;
         font-family: Verdana, sans-serif, Helvetica, Arial;
+      }
+
+      #btns{
+        text-align: center;
+        display: block;
+        margin: 1%;
+      }
+      #sondage {
+        background-color: #696969;
+        border: none;
+        color: #FFFFFF;
+        cursor: pointer;
+        font-size: 17px;
+        font-weight: 700;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        line-height: 41px;
+        padding: 15px 40px;
+        text-align: center;
+        text-decoration: none;
+        text-transform: uppercase;
+        white-space: nowrap;
+        } 
+      #sondage:hover {
+        background-color: #03903e;
+        transition: ease-in-out 0.5s;
+      }
+      #refresh {
+        background-color: #696969;
+        border: none;
+        color: #FFFFFF;
+        cursor: pointer;
+        font-size: 17px;
+        font-weight: 700;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        line-height: 41px;
+        padding: 15px 40px;
+        text-align: center;
+        text-decoration: none;
+        text-transform: uppercase;
+        white-space: nowrap;
+        }
+      #refresh:hover {
+        background-color: #EE4B2B;
+        transition: ease-in-out 0.5s;
       }
       
       #container {
@@ -588,11 +635,11 @@ app.get("/poll", (req, res) => {
       .beatiful-card .holderPart .subtitle {
         margin: 0px 0px 15px 0px;
       }
-      .beatiful-card .holderPart .YesVote, .beatiful-card .holderPart .NoVote {
+      .beatiful-card .holderPart #YesVote, .beatiful-card .holderPart #NoVote {
         color: #fff;
         padding: 8px 11px 12px 22px;
         margin: 0px 7%;
-        background: #978ed3;
+        background: #00db7f;
         border-radius: 20px;
         font-family: Verdana, sans-serif, Helvetica, Arial;
         cursor: pointer;
@@ -603,13 +650,13 @@ app.get("/poll", (req, res) => {
         display: flex;
         align-items: center;
       }
-      .beatiful-card .holderPart .YesVote:hover, .beatiful-card .holderPart .NoVote:hover {
-        background: #8378ca;
+      .beatiful-card .holderPart #YesVote:hover, .beatiful-card .holderPart #NoVote:hover {
+        background: #03903e;
       }
-      .beatiful-card .holderPart .YesVote:hover i, .beatiful-card .holderPart .NoVote:hover i {
+      .beatiful-card .holderPart #YesVote:hover i, .beatiful-card .holderPart #NoVote:hover i {
         transform: scale(1.08);
       }
-      .beatiful-card .holderPart .YesVote i, .beatiful-card .holderPart .NoVote i {
+      .beatiful-card .holderPart #YesVote i, .beatiful-card .holderPart #NoVote i {
         background: rgba(0, 0, 0, 0.5);
         font-family: Verdana, sans-serif, Helvetica, Arial;
         padding: 6px 6px;
@@ -693,12 +740,17 @@ app.get("/poll", (req, res) => {
         padding: 0;
       }
     </style>
-    
+
+    <div id="btns" style="text-align: center;">
+      <a id="refresh" href='/track_list'>Retour</a>
+    </div>
+
     <div id="Info">
       <h1 id="info-title">Sondage du jour</h1>
-      <p id="info-desc">${username}, tu as jusqu'à 23h59 pour voter sur le maintien ou la suppression de la musique dans la playlist. (UTC+2, Paris)</p>
+      <p id="info-desc">${username}, tu as jusqu'à 23h59 pour voter sur le maintien de la musique dans la playlist. (UTC+2, Paris)</p>
       <p id="info-vote">${current_user.vote == 0?"Tu n'as pas encore voté":"Tu as voté, mais tu peux modifier ton vote"}</p>
     </div>
+
     <div id="container">
       <div class="beatiful-card">
         <div class="holderPart">
@@ -706,13 +758,13 @@ app.get("/poll", (req, res) => {
           <h4 class="subtitle">par ${track.artist}</h4>
           <p class="adder">Ajoutée par ${track.adder}</p>
           <p class="link"><a class="url" href="${track.url}">Ecouter ▶️</a></p>
-          <div class="YesVote" onclick="location.href='/vote?vote=yes';">
+          <div id="YesVote" onclick="location.href='/vote?vote=yes';">
             <p class="yesno">Oui</p>
             <i class="zmdi zmdi-favorite">
               <p class="icon">👍</p>
             </i>
           </div>
-          <div class="NoVote"  onclick="location.href='/vote?vote=no';">            
+          <div id="NoVote"  onclick="location.href='/vote?vote=no';">            
             <p class="yesno">Non</p>
             <i class="zmdi zmdi-favorite">
               <p class="icon">👎</p>
@@ -721,6 +773,27 @@ app.get("/poll", (req, res) => {
         </div>
       </div>
     </div>
+
+    <script>
+    var btnYes = document.getElementById("YesVote");
+    var btnNo = document.getElementById("NoVote");
+    refreshBtnColor();
+    function refreshBtnColor() {
+      var btnYes = document.getElementById("YesVote");
+      var btnNo = document.getElementById("NoVote");
+      if (btnYes != null && btnNo != null) {
+        if (${current_user.vote} == 1) {
+          btnYes.style.backgroundColor = "#03903e";
+        }
+        else if (${current_user.vote} == -1) {
+          btnNo.style.backgroundColor = "#03903e";
+        }
+      }
+    }
+    
+    btnYes.addEventListener("click", refreshBtnColor());
+    btnNo.addEventListener("click", refreshBtnColor());
+    </script>
     `);
   }
 });
