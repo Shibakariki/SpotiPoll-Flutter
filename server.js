@@ -2,7 +2,6 @@ const express = require("express");
 const app = express();
 const queryString = require("node:querystring");
 const axios = require("axios");
-const { get } = require("node:http");
 const CryptoJS = require("crypto-js");
 
 const fs = require("fs");
@@ -18,8 +17,8 @@ const clientID = "41eb08913f8b43e98d5b1c498f126541";
 const clientSecret = "59c9a6dfb1b24f519ecf944098a83661";
 
 const base64ClientID = Buffer.from(clientID + ":" + clientSecret).toString("base64");
-const redirectURI = "http://localhost:1443/account";
-// const redirectURI = "http://mennessi.iiens.net/account";
+//const redirectURI = "http://localhost:1443/account";
+const redirectURI = "http://mennessi.iiens.net/account";
 
 const scope =
     `user-modify-playback-state
@@ -61,6 +60,7 @@ app.listen(1443, () => {
   console.log("App is listening on port 1443! localhost:1443\n");
 });
 
+app.use(express.json());
 app.use("/static", express.static('./views/static/'));
 
 // #region Get Authorization and Add Users
@@ -464,30 +464,6 @@ async function getPlaylistTracks(res,accessToken,playlist_id,setToTrack=false) {
   }
 }
 
-async function deleteTrack(res,accessToken,playlist_id,track_id) {
-  const delete_track = await axios.delete(
-  "https://api.spotify.com/v1/playlists/"+playlist_id+"/tracks",
-  {
-    headers: {
-      Authorization: "Bearer " + accessToken,
-      "Content-Type": "application/json"
-    },
-    data: {
-      tracks: [
-        {
-          uri: "spotify:track:"+track_id
-        }
-      ]
-    }
-  }
-  );
-
-  if (delete_track.data.error) {
-  res.send("Error: " + delete_track.data.error);
-  res.redirect('/track_list');
-  }
-}
-
 // #endregion
 
 // #region Poll
@@ -820,8 +796,7 @@ function generateRandomNumber(maxValue) {
 }
 
 app.get("/vote", (req, res) => {
-  console.log(req.query.vote);
-  console.log(current_user.vote);
+  console.log(username+" : "+req.query.vote);
   if (req.query.vote == "yes") {
     current_user.vote = 1;
   }
@@ -833,3 +808,114 @@ app.get("/vote", (req, res) => {
 });  
 
 // #endregion
+
+// #region Delete Track and Reset Users
+
+app.post("/delete", (req, res) => {
+  if (req.body.code != "iziLeCodeDuBot")
+  {
+    res.redirect("/");
+  }
+  else {
+    checkIfDelete();
+    res.redirect("/");
+  }
+});
+
+async function checkIfDelete() 
+{
+  var jsonData = [];
+  if ( !fs.existsSync('./views/static/fichier.json')) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
+  fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
+    if (err) {
+      console.error(err)
+      return
+    }
+    parseJson = JSON.parse(data);
+    var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+    var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
+
+    const maxValue = tracksData.length - 1;
+    const randomNumber = generateRandomNumber(maxValue);
+    const track = tracksData[randomNumber];
+
+    var noVote = usersData.filter((item) => item.vote === -1).length;
+  
+    console.log("noVote : "+ noVote);
+
+    if (noVote === 2) {
+      deleteTrack(res,accessToken,playlist_id,track.id);
+    }
+    resetAllUsers();
+  });
+}
+
+async function deleteTrack(res,accessToken,playlist_id,track_id) {
+  const delete_track = await axios.delete(
+  "https://api.spotify.com/v1/playlists/"+playlist_id+"/tracks",
+  {
+    headers: {
+      Authorization: "Bearer " + accessToken,
+      "Content-Type": "application/json"
+    },
+    data: {
+      tracks: [
+        {
+          uri: "spotify:track:"+track_id
+        }
+      ]
+    }
+  }
+  );
+
+  if (delete_track.data.error) {
+  res.send("Error: " + delete_track.data.error);
+  res.redirect('/track_list');
+  }
+}
+
+function resetAllUsers()
+{
+  var jsonData = [];
+  if ( !fs.existsSync('./views/static/fichier.json')) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
+  fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
+    if (err) {
+      console.error(err)
+      return
+    }
+    parseJson = JSON.parse(data);
+    var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+    var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
+
+    usersData.forEach(user => {
+      user.vote = 0;
+      user.push_vote = 0;
+    });
+
+    var date = new Date();
+    console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" => Users reset");
+  
+    combineJson = {"users":usersData,"tracks":tracksData}
+    jsonData = JSON.stringify(combineJson, null, 2);
+
+    // Chemin du fichier où nous voulons écrire les données JSON
+    const filePath = './views/static/fichier.json';
+  
+    // Écrire les données JSON dans le fichier
+    fs.writeFile(filePath, jsonData, 'utf8', (err) => {
+      if (err) {
+        console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
+      } else {
+        //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+      }
+    });
+  });
+}
+
+// #endregion
+
+app.post("/test", (req, res) => {
+  console.log("test"); 
+  console.log(req.body);
+  res.redirect("/");
+});

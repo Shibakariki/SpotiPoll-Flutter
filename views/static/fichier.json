@@ -2,7 +2,7 @@
   "users": [
     {
       "id": "uudinn",
-      "vote": 1,
+      "vote": 0,
       "push_vote": 0
     },
     {
@@ -410,6 +410,13 @@
       "artist": "Pop Smoke",
       "adder": "Axel",
       "url": "https://open.spotify.com/track/2r6OAV3WsYtXuXjvJ1lIDi"
+    },
+    {
+      "id": "1xLs8Mu1QEVbGCpyHQ2r2U",
+      "name": "Why",
+      "artist": "Dominic Fike",
+      "adder": "Céline",
+      "url": "https://open.spotify.com/track/1xLs8Mu1QEVbGCpyHQ2r2U"
     }
   ]
 }
