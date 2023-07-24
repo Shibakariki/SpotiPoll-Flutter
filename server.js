@@ -156,6 +156,8 @@ function modifyUser(user) {
 // #region Affichage track list and Add Track
 
 app.get("/track_list", (req, res) => {
+  const date = new Date();
+  console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" => "+username+ " a visité la page /track_list");
   let communHTML = `
     <style>
       body {
@@ -327,7 +329,7 @@ function showAllTrack(res,communHTML) {
     `;
 
     allTrack.forEach(item => {
-      tableHTML += `<tr><td>${item.name}</td><td>${item.artist}</td><td>${item.adder}</td><td><a class="url" href="${item.url}">Ecouter ▶️</a></td></tr>`;
+      tableHTML += `<tr><td>${item.name}</td><td>${item.artist}</td><td>${item.adder}</td><td><a class="url" target="_blank" href="${item.url}">Ecouter ▶️</a></td></tr>`;
     });
 
     tableHTML += '</div> </table>';
@@ -733,7 +735,7 @@ app.get("/poll", (req, res) => {
           <h3 class="title">${track.name}</h3>
           <h4 class="subtitle">par ${track.artist}</h4>
           <p class="adder">Ajoutée par ${track.adder}</p>
-          <p class="link"><a class="url" href="${track.url}">Ecouter ▶️</a></p>
+          <p class="link"><a class="url" target="_blank" href="${track.url}">Ecouter ▶️</a></p>
           <div id="YesVote" onclick="location.href='/vote?vote=yes';">
             <p class="yesno">Oui</p>
             <i class="zmdi zmdi-favorite">
@@ -892,7 +894,7 @@ function resetAllUsers()
       user.push_vote = 0;
     });
 
-    var date = new Date();
+    const date = new Date();
     console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" => Users reset");
   
     combineJson = {"users":usersData,"tracks":tracksData}
