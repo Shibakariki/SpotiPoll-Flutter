@@ -3,6 +3,7 @@ const app = express();
 const queryString = require("node:querystring");
 const axios = require("axios");
 const CryptoJS = require("crypto-js");
+var cookieParser = require('cookie-parser');  
 
 const fs = require("fs");
 
@@ -17,8 +18,8 @@ const clientID = "41eb08913f8b43e98d5b1c498f126541";
 const clientSecret = "59c9a6dfb1b24f519ecf944098a83661";
 
 const base64ClientID = Buffer.from(clientID + ":" + clientSecret).toString("base64");
-//const redirectURI = "http://localhost:1443/account";
-const redirectURI = "http://mennessi.iiens.net/account";
+const redirectURI = "http://localhost:1443/account";
+//const redirectURI = "http://mennessi.iiens.net/account";
 
 const scope =
     `user-modify-playback-state
@@ -52,7 +53,6 @@ class User {
 }
 
 var accessToken = "";
-var username = "";
 var allTrack = [];
 var current_user = new User("",0,0);
 
@@ -61,6 +61,7 @@ app.listen(1443, () => {
 });
 
 app.use(express.json());
+app.use(cookieParser());   
 app.use("/static", express.static('./views/static/'));
 
 // #region Get Authorization and Add Users
@@ -112,7 +113,6 @@ function addUser(userId) {
         //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
       }
     });
-    username = nameDict[userId];
     current_user = user;
   });
 }
@@ -157,7 +157,7 @@ function modifyUser(user) {
 
 app.get("/track_list", (req, res) => {
   const date = new Date();
-  console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" => "+username+ " a visité la page /track_list");
+  console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" à "+date.getHours+":"+date.getMinutes+":"+date.getSeconds+" => "+req.cookies["username"]+ " a visité la page /track_list");
   let communHTML = `
     <style>
       body {
@@ -366,6 +366,7 @@ app.get("/account", async (req, res) => {
     
     // var track_id = track_to_delete[0]["id"];
     // await deleteTrack(res,accessToken,playlist_id,track_id);
+    res.cookie("username", nameDict[current_user.id]);
     res.redirect('/track_list');
 })
 
@@ -725,7 +726,7 @@ app.get("/poll", (req, res) => {
 
     <div id="Info">
       <h1 id="info-title">Sondage du jour</h1>
-      <p id="info-desc">${username}, tu as jusqu'à 23h59 pour voter sur le maintien de la musique dans la playlist. (UTC+2, Paris)</p>
+      <p id="info-desc">${req.cookies["username"]}, tu as jusqu'à 23h59 pour voter sur le maintien de la musique dans la playlist. (UTC+2, Paris)</p>
       <p id="info-vote">${current_user.vote == 0?"Tu n'as pas encore voté":"Tu as voté, mais tu peux modifier ton vote"}</p>
     </div>
 
@@ -798,7 +799,7 @@ function generateRandomNumber(maxValue) {
 }
 
 app.get("/vote", (req, res) => {
-  console.log(username+" : "+req.query.vote);
+  console.log(req.cookies["username"]+" : "+req.query.vote);
   if (req.query.vote == "yes") {
     current_user.vote = 1;
   }
@@ -895,7 +896,7 @@ function resetAllUsers()
     });
 
     const date = new Date();
-    console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" => Users reset");
+    console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" à "+date.getHours+":"+date.getMinutes+":"+date.getSeconds+" => Users reset");
   
     combineJson = {"users":usersData,"tracks":tracksData}
     jsonData = JSON.stringify(combineJson, null, 2);
