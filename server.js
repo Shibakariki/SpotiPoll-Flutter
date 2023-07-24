@@ -157,7 +157,7 @@ function modifyUser(user) {
 
 app.get("/track_list", (req, res) => {
   const date = new Date();
-  console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" à "+date.getHours+":"+date.getMinutes+":"+date.getSeconds+" => "+req.cookies["username"]+ " a visité la page /track_list");
+  console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" à "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()+" => "+req.cookies["username"]+ " a visité la page /track_list");
   let communHTML = `
     <style>
       body {
@@ -896,7 +896,7 @@ function resetAllUsers()
     });
 
     const date = new Date();
-    console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" à "+date.getHours+":"+date.getMinutes+":"+date.getSeconds+" => Users reset");
+    console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" à "+date.getHours().toString()+":"+date.getMinutes().toString()+":"+date.getSeconds().toString()+" => Users reset");
   
     combineJson = {"users":usersData,"tracks":tracksData}
     jsonData = JSON.stringify(combineJson, null, 2);
