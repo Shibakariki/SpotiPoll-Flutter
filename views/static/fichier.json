@@ -2,12 +2,25 @@
   "users": [
     {
       "id": "uudinn",
-      "vote": 0,
+      "vote": 1,
       "push_vote": 0
     },
     {
       "id": "312qcpi3foqze5fnflaounnkpul4",
+      "name": "Le goat",
       "vote": 0,
+      "push_vote": 0
+    },
+    {
+      "id": "11183209297",
+      "name": "Céline",
+      "vote": -1,
+      "push_vote": 0
+    },
+    {
+      "id": "8oyik21m36g0xygzkhomv46ah",
+      "name": "Maxime",
+      "vote": 1,
       "push_vote": 0
     }
   ],

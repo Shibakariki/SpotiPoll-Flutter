@@ -45,8 +45,9 @@ class Track {
 }  
 
 class User {
-  constructor(id,vote,push_vote) {
+  constructor(id,vote,name,push_vote) {
     this.id = id;
+    this.name = name;
     this.vote = vote;
     this.push_vote = push_vote;
   }
@@ -54,7 +55,7 @@ class User {
 
 var accessToken = "";
 var allTrack = [];
-var current_user = new User("",0,0);
+var current_user = new User("","",0,0);
 
 app.listen(1443, () => {
   console.log("App is listening on port 1443! localhost:1443\n");
@@ -84,7 +85,7 @@ function addUser(userId) {
       return
     }
     parseJson = JSON.parse(data);
-    var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
     var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
 
     already_known = false;
@@ -94,11 +95,12 @@ function addUser(userId) {
       }
     });
     if (!already_known) {
-      usersData.push(new User(userId,0,0));
+      usersData.push(new User(userId,nameDict[userId],0,0));
     }
     else {
       user = usersData.filter((item) => item.id === userId)[0];
     }
+
     combineJson = {"users":usersData,"tracks":tracksData}
     jsonData = JSON.stringify(combineJson, null, 2);
   
@@ -126,7 +128,7 @@ function modifyUser(user) {
       return
     }
     parseJson = JSON.parse(data);
-    var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
     var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
 
     const indexToUpdate = usersData.findIndex((item) => item.id === user.id);
@@ -271,7 +273,7 @@ app.get("/track_list", (req, res) => {
         return
       }
       parseJson = JSON.parse(data);
-      var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+      var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
       var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
       
       allTrack = tracksData;
@@ -292,7 +294,7 @@ function setTrackList(all_tracks) {
       return
     }
     parseJson = JSON.parse(data);
-    var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
     var tracksData = [];
 
     allTrack.forEach(track => {
@@ -362,7 +364,7 @@ app.get("/account", async (req, res) => {
     setTrackList(allTrack);
 
     // console.log(playlist_tracks);
-    const track_to_delete = playlist_tracks.filter((item) => item.name === "Hello (feat. A Boogie Wit da Hoodie)");
+    // const track_to_delete = playlist_tracks.filter((item) => item.name === "Hello (feat. A Boogie Wit da Hoodie)");
     
     // var track_id = track_to_delete[0]["id"];
     // await deleteTrack(res,accessToken,playlist_id,track_id);
@@ -835,7 +837,7 @@ async function checkIfDelete()
       return
     }
     parseJson = JSON.parse(data);
-    var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
     var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
 
     const maxValue = tracksData.length - 1;
@@ -844,7 +846,7 @@ async function checkIfDelete()
 
     var noVote = usersData.filter((item) => item.vote === -1).length;
   
-    console.log("noVote : "+ noVote);
+    console.log("Nombre de vote pour la suppression : "+ noVote);
 
     if (noVote === 2) {
       deleteTrack(res,accessToken,playlist_id,track.id);
@@ -887,7 +889,7 @@ function resetAllUsers()
       return
     }
     parseJson = JSON.parse(data);
-    var usersData = parseJson["users"].map(user => new User(user.id,user.vote,user.push_vote));
+    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
     var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
 
     usersData.forEach(user => {
