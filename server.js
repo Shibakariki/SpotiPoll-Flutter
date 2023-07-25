@@ -158,8 +158,8 @@ function modifyUser(user) {
 // #region Affichage track list and Add Track
 
 app.get("/track_list", (req, res) => {
-  const date = new Date();
-  console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" à "+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()+" => "+req.cookies["username"]+ " a visité la page /track_list");
+  if (req.cookies.username === undefined) { res.redirect('/'); }
+  log(req, res, "a visité la page /track_list");
   let communHTML = `
     <style>
       body {
@@ -369,6 +369,7 @@ app.get("/account", async (req, res) => {
     // var track_id = track_to_delete[0]["id"];
     // await deleteTrack(res,accessToken,playlist_id,track_id);
     res.cookie("username", nameDict[current_user.id]);
+    log(req, res, "s'est connecté avec succès");
     res.redirect('/track_list');
 })
 
@@ -474,6 +475,8 @@ async function getPlaylistTracks(res,accessToken,playlist_id,setToTrack=false) {
 // #region Poll
 
 app.get("/poll", (req, res) => {
+  if (req.cookies.username === undefined) { res.redirect('/'); }
+  log(req, res, "a visité la page /poll");
   if (allTrack.length > 0) {
     const maxValue = allTrack.length - 1;
     const randomNumber = generateRandomNumber(maxValue);
@@ -801,7 +804,7 @@ function generateRandomNumber(maxValue) {
 }
 
 app.get("/vote", (req, res) => {
-  console.log(req.cookies["username"]+" : "+req.query.vote);
+  log(req, res, "a voté : "+req.query.vote);
   if (req.query.vote == "yes") {
     current_user.vote = 1;
   }
@@ -816,14 +819,13 @@ app.get("/vote", (req, res) => {
 
 // #region Delete Track and Reset Users
 
-app.post("/delete", (req, res) => {
+app.post("/delete", async (req, res) => {
   if (req.body.code != "iziLeCodeDuBot")
   {
     res.redirect("/");
   }
   else {
     checkIfDelete();
-    res.redirect("/");
   }
 });
 
@@ -846,12 +848,14 @@ async function checkIfDelete()
 
     var noVote = usersData.filter((item) => item.vote === -1).length;
   
-    console.log("Nombre de vote pour la suppression : "+ noVote);
+    logActionBot("Nombre de vote pour la suppression : "+ noVote);
 
     if (noVote === 2) {
+      logActionBot("Suppression de la musique : "+track.name+" par "+track.artist);
       deleteTrack(res,accessToken,playlist_id,track.id);
     }
     resetAllUsers();
+    logReadBot([noVote,track.name,track.artist]);
   });
 }
 
@@ -897,9 +901,7 @@ function resetAllUsers()
       user.push_vote = 0;
     });
 
-    const date = new Date();
-    console.log(date.getDate().toString()+"/"+date.getMonth().toString()+"/"+date.getFullYear().toString()+" à "+date.getHours().toString()+":"+date.getMinutes().toString()+":"+date.getSeconds().toString()+" => Users reset");
-  
+    logActionBot("Reset des votes");  
     combineJson = {"users":usersData,"tracks":tracksData}
     jsonData = JSON.stringify(combineJson, null, 2);
 
@@ -915,6 +917,59 @@ function resetAllUsers()
       }
     });
   });
+}
+
+// #endregion
+
+// #region Log
+
+function log(req, res, info) {
+  const date = new Date();
+  const time = date.getDate().toString()+"/"+((date.getMonth()+1)+1).toString()+"/"+date.getFullYear().toString()+" à "+date.getHours().toString()+":"+date.getMinutes().toString()+":"+date.getSeconds().toString()+" => ";
+  fs.appendFile('./views/static/log.txt', time+req.cookies["username"]+ " "+info+"\n", function (err) 
+  {
+    if (err) throw err;
+  }
+  );
+}
+
+function logReadBot(info) {
+  const date = new Date();
+  const time = date.getDate().toString()+"/"+(date.getMonth()+1).toString()+"/"+date.getFullYear().toString()+" => ";
+  fs.writeFile('./views/static/readResult.txt', time + "Il y a eu " + info[0] + " vote(s) pour la suppression de " + info[1] + " par " + info[2] +"\n", function (err) 
+  {
+    if (err) throw err;
+  }
+  );
+
+}
+
+app.get("/result", (req, res) => {
+  if ( fs.existsSync('./views/static/readResult.txt'))
+  {
+    fs.readFile('./views/static/readResult.txt', 'utf8', (err, data) => {
+      if (err) {
+        console.error(err)
+        return
+      }
+      res.send(data);
+    });
+  }
+  else {
+    res.send("Aucun résultat");
+  }
+});
+
+
+function logActionBot(info) {
+  const date = new Date();
+  const time = date.getDate().toString()+"/"+(date.getMonth()+1).toString()+"/"+date.getFullYear().toString()+" à "+date.getHours().toString()+":"+date.getMinutes().toString()+":"+date.getSeconds().toString()+" => ";
+  fs.appendFile('./views/static/log.txt', time+ " "+info+"\n", function (err) 
+  {
+    if (err) throw err;
+  }
+  );
+
 }
 
 // #endregion
