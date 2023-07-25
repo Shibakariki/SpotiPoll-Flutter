@@ -368,8 +368,9 @@ app.get("/account", async (req, res) => {
     
     // var track_id = track_to_delete[0]["id"];
     // await deleteTrack(res,accessToken,playlist_id,track_id);
-    res.cookie("username", nameDict[current_user.id]);
-    log(req, res, "s'est connecté avec succès");
+    let username = nameDict[current_user.id];
+    res.cookie("username", username);
+    logConnect(username);
     res.redirect('/track_list');
 })
 
@@ -927,6 +928,16 @@ function log(req, res, info) {
   const date = new Date();
   const time = date.getDate().toString()+"/"+((date.getMonth()+1)+1).toString()+"/"+date.getFullYear().toString()+" à "+date.getHours().toString()+":"+date.getMinutes().toString()+":"+date.getSeconds().toString()+" => ";
   fs.appendFile('./views/static/log.txt', time+req.cookies["username"]+ " "+info+"\n", function (err) 
+  {
+    if (err) throw err;
+  }
+  );
+}
+
+function logConnect(username) {
+  const date = new Date();
+  const time = date.getDate().toString()+"/"+((date.getMonth()+1)+1).toString()+"/"+date.getFullYear().toString()+" à "+date.getHours().toString()+":"+date.getMinutes().toString()+":"+date.getSeconds().toString()+" => ";
+  fs.appendFile('./views/static/log.txt', time+username+ " "+"s'est connecté avec succès\n", function (err) 
   {
     if (err) throw err;
   }
