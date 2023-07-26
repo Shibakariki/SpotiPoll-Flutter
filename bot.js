@@ -98,9 +98,22 @@ let sendResultDM = new cron.CronJob('00 00 00 * * *', async () => {
   );
 });
 
+// let testDM = new cron.CronJob('00 11 20 * * *', async () => {
+//   const user1 = await client.users.fetch('292409251916152832'); //Axel
+//   const user2 = await client.users.fetch('557505245505257476'); //Céline
+//   const user3 = await client.users.fetch('882166624717770812'); //Maxime
+//   var users = [user1,user2,user3];
+
+//   users.forEach(user => {
+//     user.send("test");
+//   }
+//   );
+// });
+
 checkVote.start()
 resultMessage.start()
 sendReminderDM.start()
 sendResultDM.start()
+// testDM.start()
 
  client.login(token);

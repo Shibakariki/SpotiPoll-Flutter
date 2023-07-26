@@ -45,7 +45,7 @@ class Track {
 }  
 
 class User {
-  constructor(id,vote,name,push_vote) {
+  constructor(id,name,vote,push_vote) {
     this.id = id;
     this.name = name;
     this.vote = vote;
@@ -71,13 +71,11 @@ app.use("/static", express.static('./views/static/'));
 //contains custom url queries that pertain to my specific app
 app.get("/", async (req, res) => {
   res.sendFile(path+"connect.html");
-  //res.redirect("/track_list");
-
 });
 
 function addUser(userId) {
   var jsonData = [];
-  var user = new User(userId,0,0);
+  var user = new User(userId,"",0,0);
   if ( !fs.existsSync('./views/static/fichier.json')) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
   fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
     if (err) {
@@ -95,7 +93,8 @@ function addUser(userId) {
       }
     });
     if (!already_known) {
-      usersData.push(new User(userId,nameDict[userId],0,0));
+      user = new User(userId,nameDict[userId],0,0)
+      usersData.push(user);
     }
     else {
       user = usersData.filter((item) => item.id === userId)[0];
@@ -115,6 +114,7 @@ function addUser(userId) {
         //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
       }
     });
+
     current_user = user;
   });
 }
@@ -158,7 +158,7 @@ function modifyUser(user) {
 // #region Affichage track list and Add Track
 
 app.get("/track_list", (req, res) => {
-  if (req.cookies.username === undefined) { res.redirect('/'); }
+  if (req.cookies.username === undefined || allTrack.length === 0) { return res.redirect('/'); }
   log(req, res, "a visité la page /track_list");
   let communHTML = `
     <style>
@@ -349,6 +349,7 @@ function showAllTrack(res,communHTML) {
 //this is the page user is redirected to after accepting data use on spotify's website
 //it does not have to be /account, it can be whatever page you want it to be
 app.get("/account", async (req, res) => {
+    if (req.query.code === undefined) { return res.redirect('/'); }
     const accessToken = await getAccessToken(req.query.code, res);
     const userId = await getUserId(res,accessToken);
     addUser(userId);
@@ -371,7 +372,7 @@ app.get("/account", async (req, res) => {
     let username = nameDict[current_user.id];
     res.cookie("username", username);
     logConnect(username);
-    res.redirect('/track_list');
+    return res.redirect('/track_list');
 })
 
 async function isTokenValid(res,accessToken) {
@@ -407,7 +408,7 @@ async function getAccessToken(code,res) {
   );
   if (spotifyResponse.data.error) {
     res.send("Error: " + spotifyResponse.data.error);
-    res.redirect('/');
+    return res.redirect('/');
   }
   var accessToken = spotifyResponse.data.access_token;
   return accessToken;
@@ -425,7 +426,7 @@ async function getUserId(res,accessToken) {
 
   if (userid.data.error) {
     res.send("Error: " + userid.data.error);
-    res.redirect('/');
+    return res.redirect('/');
   }
   return userid.data["id"];
 }
@@ -442,7 +443,7 @@ async function getAllPlaylist(res,accessToken) {
 
   if (all_playlists.data.error) {
     res.send("Error: " + all_playlists.data.error);
-    res.redirect('/');
+    return res.redirect('/');
   }
   return all_playlists;
 }
@@ -459,7 +460,7 @@ async function getPlaylistTracks(res,accessToken,playlist_id,setToTrack=false) {
 
   if (playlist_tracks.data.error) {
     res.send("Error: " + playlist_tracks.data.error);
-    res.redirect('/');
+    return res.redirect('/');
   }
   if (setToTrack) {
     var all_tracks = playlist_tracks.data["items"];
@@ -476,7 +477,7 @@ async function getPlaylistTracks(res,accessToken,playlist_id,setToTrack=false) {
 // #region Poll
 
 app.get("/poll", (req, res) => {
-  if (req.cookies.username === undefined) { res.redirect('/'); }
+  if (req.cookies.username === undefined || allTrack.length === 0) { res.redirect('/'); }
   log(req, res, "a visité la page /poll");
   if (allTrack.length > 0) {
     const maxValue = allTrack.length - 1;
@@ -805,6 +806,7 @@ function generateRandomNumber(maxValue) {
 }
 
 app.get("/vote", (req, res) => {
+  if (req.cookies.username === undefined || allTrack.length === 0) { return res.redirect('/'); }
   log(req, res, "a voté : "+req.query.vote);
   if (req.query.vote == "yes") {
     current_user.vote = 1;
@@ -813,7 +815,7 @@ app.get("/vote", (req, res) => {
     current_user.vote = -1;
   }
   modifyUser(current_user);
-  res.redirect("/poll");
+  return res.redirect("/poll");
 });  
 
 // #endregion
@@ -823,7 +825,7 @@ app.get("/vote", (req, res) => {
 app.post("/delete", async (req, res) => {
   if (req.body.code != "iziLeCodeDuBot")
   {
-    res.redirect("/");
+    return res.redirect("/");
   }
   else {
     checkIfDelete();
@@ -880,7 +882,7 @@ async function deleteTrack(res,accessToken,playlist_id,track_id) {
 
   if (delete_track.data.error) {
   res.send("Error: " + delete_track.data.error);
-  res.redirect('/track_list');
+  return res.redirect('/track_list');
   }
 }
 
@@ -988,5 +990,5 @@ function logActionBot(info) {
 app.post("/test", (req, res) => {
   console.log("test"); 
   console.log(req.body);
-  res.redirect("/");
+  return res.redirect("/");
 });
