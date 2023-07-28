@@ -6,9 +6,9 @@ const client = new Discord.Client({ intents: [
     Discord.GatewayIntentBits.GuildMessageReactions,
     Discord.GatewayIntentBits.MessageContent,
   ]})
-const token = "MTEyODc2NjkzOTA0MTM3MDEzMg.GlZbVJ.Il5lTJxwCaqlQmIthEpoBIw3OST2pohDRAJdTY";
-//const redirectURI = "http://localhost:1443/";
-const redirectURI = "http://mennessi.iiens.net/";
+const token = process.env.DISCORD_TOKEN;
+const redirectURI = "http://localhost:1443/";
+//const redirectURI = "http://mennessi.iiens.net/";
 
 const axios = require('axios');
 const cron = require('cron');
@@ -31,14 +31,14 @@ client.once('ready', () => {
 // 00 min hr * * *
 let checkVote = new cron.CronJob('00 59 23 * * *', async () => {
   const res = await axios.post(redirectURI+"delete", {
-    code: "iziLeCodeDuBot"
+    code: process.env.DELETE_SECURE_CODE
   });
 });
 
 let resultMessage = new cron.CronJob('00 00 00 * * *', async () => {
   const res = await axios.get(redirectURI+"result");
   console.log(res.data);
-  const channel = client.channels.cache.get('1128769717100883971');
+  const channel = client.channels.cache.get(process.env.DISCORD_CHANNEL_ID);
   channel.send(res.data);
 });
 
