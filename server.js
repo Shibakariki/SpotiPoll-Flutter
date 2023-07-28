@@ -172,120 +172,35 @@ async function modifyUser(user) {
   }
 }
 
-// #endregion
-
-// #region Affichage track list and Add Track
 app.get("/track_list", async (req, res) => {
+  if (req.cookies.username === undefined || allTrack.length === 0) {
+    return res.redirect('/');
+  } else {
+    res.sendFile(path.join(__dirname, "views/tracklist.html"));
+  }
+});
+
+app.get('/refreshTrackList', (req, res) => {
+  const spotifyURL =
+    "https://accounts.spotify.com/authorize?client_id=" +
+    clientID +
+    "&response_type=code&redirect_uri=" +
+    redirectURI +
+    "&scope=" +
+    scope;
+
+  res.redirect(spotifyURL);
+});
+
+app.get("/getTrackList", async (req, res) => {
   try {
     if (req.cookies.username === undefined || allTrack.length === 0) {
       return res.redirect('/');
     }
 
     log(req, res, "a visité la page /track_list");
-    let communHTML = `
-    <style>
-      body {
-        background: linear-gradient(95deg, #00db7f 0%,#1DB954 40%,#03903e 100%);
-        margin: 0;
-        padding: 0;
-        font-family: Verdana, sans-serif, Helvetica, Arial;
-      }
-      #btns{
-        text-align: center;
-        display: block;
-        margin: 1%;
-      }
-      #sondage {
-        background-color: #696969;
-        border: none;
-        color: #FFFFFF;
-        cursor: pointer;
-        font-size: 17px;
-        font-weight: 700;
-        font-family: Verdana, sans-serif, Helvetica, Arial;
-        line-height: 41px;
-        padding: 15px 40px;
-        text-align: center;
-        text-decoration: none;
-        text-transform: uppercase;
-        white-space: nowrap;
-        } 
-      #sondage:hover {
-        background-color: #03903e;
-        transition: ease-in-out 0.5s;
-      }
-      #refresh {
-        background-color: #696969;
-        border: none;
-        color: #FFFFFF;
-        cursor: pointer;
-        font-size: 17px;
-        font-weight: 700;
-        font-family: Verdana, sans-serif, Helvetica, Arial;
-        line-height: 41px;
-        padding: 15px 40px;
-        text-align: center;
-        text-decoration: none;
-        text-transform: uppercase;
-        white-space: nowrap;
-        }
-      #refresh:hover {
-        background-color: #EE4B2B;
-        transition: ease-in-out 0.5s;
-      }
-      .url {
-        text-decoration: none;
-        color: #00A6ED;
-        border: 1px solid #00A6ED;
-        border-radius: 5px;
-        padding: 2px;
-        background-color: #ffffff99;
-      }
-      table {
-        margin: 0 auto;
-        text-align: left;
-        color: white;
-        cursor: default;
-        border-spacing: 0;
-        border-collapse: collapse;
-        width: 80%;
-        font-family: Verdana, sans-serif, Helvetica, Arial;
-      }
-      th, td {
-        padding: 8px;
-        text-align: center;
-        vertical-align: middle;
-        font-family:  Verdana, sans-serif, Helvetica, Arial;
-      }
-      h1 {
-        padding: 8px;
-        text-align: center;
-        vertical-align: middle;
-        font-family:  Verdana, sans-serif, Helvetica, Arial;
-        font-size: 30px ;
-        font-weight: 600 ;
-        text-transform: uppercase;
-        -webkit-text-stroke-width: 2px;
-        -webkit-text-stroke-color: black;
-        color: white;
-      }
-      th {
-        background-color: #ffffff44;
-      }
-      tr:nth-child(even) {
-        background-color: #ffffff24;
-      }
-      tr:nth-child(odd) {
-        background-color: #ffffff11;
-      }
-      td:hover {
-        background-color: #ffffff44;
-      }
-    </style>
-    <div id="btns" style="text-align: center;">
-      <a id="sondage" href="/poll">Sondage du jour</a>
-      <a id="refresh" href='https://accounts.spotify.com/authorize?client_id=${clientID}&response_type=code&redirect_uri=${redirectURI}&scope=${scope}'>Refresh</a>
-    </div>`;
+
+    let communHTML = ``;
     if (allTrack.length === 0) {
 
       if (!await fs.access(DBFilePath)) {
