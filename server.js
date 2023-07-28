@@ -89,51 +89,6 @@ app.get("/", async (req, res) => {
   res.sendFile(path+"connect.html");
 });
 
-function addUser(userId) {
-  var jsonData = [];
-  var user = new User(userId,"",0,0);
-  if ( !fs.existsSync(process.env.BDD_FILEPATH)) { fs.writeFile(process.env.BDD_FILEPATH, jsonData, 'utf8', () => {}) }
-  fs.readFile(process.env.BDD_FILEPATH, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err)
-      return
-    }
-    parseJson = JSON.parse(data);
-    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
-    var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
-
-    already_known = false;
-    usersData.forEach(user => {
-      if (user.id == userId) {
-        already_known = true;
-      }
-    });
-    if (!already_known) {
-      user = new User(userId,nameDict[userId],0,0)
-      usersData.push(user);
-    }
-    else {
-      user = usersData.filter((item) => item.id === userId)[0];
-    }
-
-    combineJson = {"users":usersData,"tracks":tracksData}
-    jsonData = JSON.stringify(combineJson, null, 2);
-  
-    // Chemin du fichier où nous voulons écrire les données JSON
-    const filePath = process.env.BDD_FILEPATH;
-  
-    // Écrire les données JSON dans le fichier
-    fs.writeFile(filePath, jsonData, 'utf8', (err) => {
-      if (err) {
-        console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
-      } else {
-        //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
-      }
-    });
-
-    current_user = user;
-  });
-}
 
 function addUser(userId) {
   // Initialiser jsonData avec un objet vide
