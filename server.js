@@ -3,10 +3,10 @@ const app = express();
 const queryString = require("node:querystring");
 const axios = require("axios");
 const CryptoJS = require("crypto-js");
-var cookieParser = require('cookie-parser');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
-
-const fs = require("fs");
+const fs = require('fs').promises;
+const path = require('path');
 
 const nameDict = {
   "uudinn": "Axel",
@@ -14,6 +14,8 @@ const nameDict = {
   "8oyik21m36g0xygzkhomv46ah": "Maxime",
   "312qcpi3foqze5fnflaounnkpul4": "Le goat"
 }
+
+const DBFilePath = path.join(__dirname, process.env.BDD_FILEPATH)
 
 // Liste des noms de variables d'environnement requises
 const requiredEnvVariables = ['BDD_FILEPATH', 'REDIRECT_URL', 'DISCORD_CHANNEL_ID', 'DISCORD_TOKEN', 'DELETE_SECURE_CODE', 'SPOTIFY_PLAYLIST_ID', 'SPOTIFY_CLIENT_SECRET', 'SPOTIFY_CLIENT_ID'];
@@ -31,14 +33,14 @@ function checkEnvVariables() {
 
 checkEnvVariables()
 
-const clientID = process.env.SPOTIFY_CLIENT_ID;
-const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+const clientID = process.env.SPOTIFY_CLIENT_ID
+const clientSecret = process.env.SPOTIFY_CLIENT_SECRET
 
-const base64ClientID = Buffer.from(clientID + ":" + clientSecret).toString("base64");
+const base64ClientID = Buffer.from(clientID + ":" + clientSecret).toString("base64")
 const redirectURI = process.env.REDIRECT_URL
 
 const scope =
-    `user-modify-playback-state
+  `user-modify-playback-state
     user-read-playback-state
     user-read-currently-playing
     user-library-modify
@@ -48,20 +50,19 @@ const scope =
     playlist-modify-public`;
 
 var router = express.Router();
-var path = __dirname + '/views/'; // this folder should contain your html files.
 
 class Track {
-  constructor(id, name, artist, adder,url) {
+  constructor(id, name, artist, adder, url) {
     this.id = id;
     this.name = name;
     this.artist = artist;
     this.adder = adder;
     this.url = url;
-  }  
-}  
+  }
+}
 
 class User {
-  constructor(id,name,vote,push_vote) {
+  constructor(id, name, vote, push_vote) {
     this.id = id;
     this.name = name;
     this.vote = vote;
@@ -71,14 +72,14 @@ class User {
 
 var accessToken = "";
 var allTrack = [];
-var current_user = new User("","",0,0);
+var current_user = new User("", "", 0, 0);
 
 app.listen(1443, () => {
   console.log("App is listening on port 1443! localhost:1443\n");
 });
 
 app.use(express.json());
-app.use(cookieParser());   
+app.use(cookieParser());
 app.use("/static", express.static('./views/static/'));
 
 // #region Get Authorization and Add Users
@@ -86,114 +87,102 @@ app.use("/static", express.static('./views/static/'));
 //this page contains the link to the spotify authorization page
 //contains custom url queries that pertain to my specific app
 app.get("/", async (req, res) => {
-  res.sendFile(path+"connect.html");
+  res.sendFile(path.join(__dirname, "views/connect.html"));
 });
 
+async function addUser(userId) {
 
-function addUser(userId) {
-  // Initialiser jsonData avec un objet vide
-  var jsonData = {};
-  var user = new User(userId, "", 0, 0);
+  try {
+    let jsonData = await readJSON(DBFilePath); // Lire le fichier JSON existant
 
-  if (!fs.existsSync(process.env.BDD_FILEPATH)) {
-    // Écrire un nouvel objet vide dans le fichier s'il n'existe pas
-    fs.writeFile(process.env.BDD_FILEPATH, JSON.stringify(jsonData), 'utf8', () => {});
+    if (!jsonData) {
+      // Si le fichier JSON est vide ou n'existe pas, initialiser les données
+      jsonData = { "users": [], "tracks": [] };
+    }
+
+    let user = jsonData["users"].find(user => user.id === userId);
+
+    if (!user) {
+      // Si l'utilisateur n'existe pas déjà, créer un nouvel utilisateur
+      user = new User(userId, nameDict[userId], 0, 0);
+      jsonData["users"].push(user); // Ajouter le nouvel utilisateur au tableau d'utilisateurs
+    }
+
+    await writeJSON(DBFilePath, jsonData); // Écrire les données mises à jour dans le fichier JSON
+
+    current_user = user;
+  } catch (error) {
+    console.error('Une erreur s\'est produite lors de l\'ajout de l\'utilisateur :', error);
   }
+}
 
-  fs.readFile(process.env.BDD_FILEPATH, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err);
+
+
+// Utilitaire pour lire le fichier JSON
+async function readJSON(filePath) {
+  try {
+    const data = await fs.readFile(filePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Erreur lors de la lecture du fichier JSON :', error);
+    return null;
+  }
+}
+
+// Utilitaire pour écrire le fichier JSON
+async function writeJSON(filePath, jsonData) {
+  try {
+    await fs.writeFile(filePath, JSON.stringify(jsonData, null, 2), 'utf8');
+  } catch (error) {
+    console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier :', error);
+  }
+}
+
+async function modifyUser(user) {
+  try {
+    try {
+      await fs.access(DBFilePath);
+    } catch (error) {
+      console.error('Le fichier JSON n\'existe pas.');
       return;
     }
 
-    parseJson = JSON.parse(data);
+    const jsonData = await readJSON(DBFilePath);
 
     // Vérifier si parseJson["users"] est défini et est un tableau
-    var usersData = Array.isArray(parseJson["users"])
-      ? parseJson["users"].map(user => new User(user.id, user.name, user.vote, user.push_vote))
+    const usersData = Array.isArray(jsonData["users"])
+      ? jsonData["users"].map(user => new User(user.id, user.name, user.vote, user.push_vote))
       : [];
 
     // Vérifier si parseJson["tracks"] est défini et est un tableau
-    var tracksData = Array.isArray(parseJson["tracks"])
-      ? parseJson["tracks"].map(track => new Track(track.id, track.name, track.artist, track.adder, track.url))
+    const tracksData = Array.isArray(jsonData["tracks"])
+      ? jsonData["tracks"].map(track => new Track(track.id, track.name, track.artist, track.adder, track.url))
       : [];
-
-    already_known = false;
-    usersData.forEach(user => {
-      if (user.id == userId) {
-        already_known = true;
-      }
-    });
-
-    if (!already_known) {
-      user = new User(userId, nameDict[userId], 0, 0)
-      usersData.push(user);
-    } else {
-      user = usersData.filter((item) => item.id === userId)[0];
-    }
-
-    combineJson = { "users": usersData, "tracks": tracksData };
-    jsonData = JSON.stringify(combineJson, null, 2);
-
-    // Chemin du fichier où nous voulons écrire les données JSON
-    const filePath = process.env.BDD_FILEPATH;
-
-    fs.writeFile(filePath, jsonData, 'utf8', (err) => {
-      if (err) {
-        console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
-      } else {
-        //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
-      }
-    });
-
-    current_user = user;
-  });
-}
-
-function modifyUser(user) {
-  var jsonData = [];
-  if ( !fs.existsSync(process.env.BDD_FILEPATH)) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
-  fs.readFile(process.env.BDD_FILEPATH, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err)
-      return
-    }
-    parseJson = JSON.parse(data);
-    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
-    var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
 
     const indexToUpdate = usersData.findIndex((item) => item.id === user.id);
 
     if (indexToUpdate !== -1) {
       usersData[indexToUpdate] = user;
     }
-    combineJson = {"users":usersData,"tracks":tracksData}
-    jsonData = JSON.stringify(combineJson, null, 2);
 
-    // Chemin du fichier où nous voulons écrire les données JSON
-    const filePath = process.env.BDD_FILEPATH;
-  
-    // Écrire les données JSON dans le fichier
-    fs.writeFile(filePath, jsonData, 'utf8', (err) => {
-      if (err) {
-        console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
-      } else {
-        //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
-      }
-    });
-  });
+    const combineJson = { "users": usersData, "tracks": tracksData };
+    await writeJSON(DBFilePath, combineJson);
+  } catch (error) {
+    console.error('Une erreur s\'est produite lors de la modification de l\'utilisateur :', error);
+  }
 }
-
-
 
 // #endregion
 
 // #region Affichage track list and Add Track
+app.get("/track_list", async (req, res) => {
+  try {
+    if (req.cookies.username === undefined || allTrack.length === 0) {
+      return res.redirect('/');
+    }
 
-app.get("/track_list", (req, res) => {
-  if (req.cookies.username === undefined || allTrack.length === 0) { return res.redirect('/'); }
-  log(req, res, "a visité la page /track_list");
-  let communHTML = `
+    log(req, res, "a visité la page /track_list");
+    let communHTML = `
     <style>
       body {
         background: linear-gradient(95deg, #00db7f 0%,#1DB954 40%,#03903e 100%);
@@ -297,62 +286,94 @@ app.get("/track_list", (req, res) => {
       <a id="sondage" href="/poll">Sondage du jour</a>
       <a id="refresh" href='https://accounts.spotify.com/authorize?client_id=${clientID}&response_type=code&redirect_uri=${redirectURI}&scope=${scope}'>Refresh</a>
     </div>`;
-  if (allTrack.length == 0) {
-    var jsonData = [];
-    if ( !fs.existsSync(process.env.BDD_FILEPATH)) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
-    fs.readFile(process.env.BDD_FILEPATH, 'utf8', (err, data) => {
-      if (err) {
-        console.error(err)
-        return
+    if (allTrack.length === 0) {
+
+      if (!await fs.access(DBFilePath)) {
+        await fs.writeFile(DBFilePath, '[]', 'utf8');
       }
-      parseJson = JSON.parse(data);
-      var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
-      var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
-      
+
+      const jsonData = await readJSON(DBFilePath);
+
+      // Vérifier si parseJson["tracks"] est défini et est un tableau
+      const tracksData = Array.isArray(jsonData?.["tracks"])
+        ? jsonData["tracks"].map(track => new Track(track.id, track.name, track.artist, track.adder, track.url))
+        : [];
+
       allTrack = tracksData;
       showAllTrack(res, communHTML);
-    });
-  }
-  else {
-    showAllTrack(res,communHTML);
+    } else {
+      showAllTrack(res, communHTML);
+    }
+  } catch (error) {
+    console.error('Une erreur s\'est produite dans la route "/track_list":', error);
+    // Gérer l'erreur en renvoyant une réponse appropriée à l'utilisateur
+    res.status(500).send('Une erreur s\'est produite. Veuillez réessayer ultérieurement.');
   }
 });
 
-function setTrackList(all_tracks) {
-  var jsonData = [];
-  if ( !fs.existsSync(process.env.BDD_FILEPATH)) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
-  fs.readFile(process.env.BDD_FILEPATH, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err)
-      return
-    }
-    parseJson = JSON.parse(data);
-    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
-    var tracksData = [];
+async function setTrackList(all_tracks) {
+  try {
+    const fileExists = await fs.access(DBFilePath).then(() => true).catch(() => false);
 
-    allTrack.forEach(track => {
-      tracksData.push(new Track(track.id,track.name,track.artist,track.adder,track.url));
-    });
-    combineJson = {"users":usersData,"tracks":tracksData}
-    jsonData = JSON.stringify(combineJson, null, 2);
-  
-    // Chemin du fichier où nous voulons écrire les données JSON
-    const filePath = process.env.BDD_FILEPATH;
-  
-    // Écrire les données JSON dans le fichier
-    fs.writeFile(filePath, jsonData, 'utf8', (err) => {
-      if (err) {
-        console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
-      } else {
-        //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
-      }
-    });
-  });
+    if (!fileExists) {
+      await fs.writeFile(DBFilePath, '[]', 'utf8');
+    }
+
+    const jsonData = await fs.readFile(DBFilePath, 'utf8');
+    let parseJson;
+
+    try {
+      parseJson = JSON.parse(jsonData);
+    } catch (err) {
+      // Si la lecture du fichier échoue ou les données ne sont pas valides JSON, on peut initialiser les valeurs par défaut
+      parseJson = { "users": [], "tracks": [] };
+    }
+
+    const usersData = Array.isArray(parseJson["users"]) ? parseJson["users"].map(user => new User(user.id, user.name, user.vote, user.push_vote)) : [];
+    const tracksData = Array.isArray(all_tracks) ? all_tracks.map(track => new Track(track.id, track.name, track.artist, track.adder, track.url)) : [];
+
+    const combineJson = { "users": usersData, "tracks": tracksData };
+    const updatedJsonData = JSON.stringify(combineJson, null, 2);
+
+    await fs.writeFile(DBFilePath, updatedJsonData, 'utf8');
+  } catch (err) {
+    console.error('Une erreur s\'est produite lors du traitement de la route "/account":', err);
+  }
 }
 
-function showAllTrack(res,communHTML) {
+async function saveTracks(all_tracks) {
+  try {
+    const jsonData = await readJSON(DBFilePath);
+
+    // Vérifier si parseJson["users"] est défini et est un tableau
+    const usersData = Array.isArray(jsonData?.["users"])
+      ? jsonData["users"].map(user => new User(user.id, user.name, user.vote, user.push_vote))
+      : [];
+
+    const tracksData = all_tracks.map(track => new Track(track.id, track.name, track.artist, track.adder, track.url));
+
+    const combineJson = { "users": usersData, "tracks": tracksData };
+
+    await writeJSON(DBFilePath, combineJson);
+    console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+  } catch (error) {
+    console.error('Une erreur s\'est produite lors de la sauvegarde des pistes dans le fichier JSON :', error);
+  }
+}
+
+function generateTrackRow(item) {
+  return `<tr>
+            <td>${item.name}</td>
+            <td>${item.artist}</td>
+            <td>${item.adder}</td>
+            <td><a class="url" target="_blank" href="${item.url}">Ecouter ▶️</a></td>
+          </tr>`;
+}
+
+function showAllTrack(res, communHTML) {
   if (allTrack.length > 0) {
-    let tableHTML = `
+    const tableRows = allTrack.map(generateTrackRow).join('');
+    const tableHTML = `
       <div>
         <table>
           <tr>
@@ -361,54 +382,45 @@ function showAllTrack(res,communHTML) {
             <th>Ajoutée par</th>
             <th>Ecouter</th>
           </tr>
-    `;
+          ${tableRows}
+        </table>
+      </div>`;
 
-    allTrack.forEach(item => {
-      tableHTML += `<tr><td>${item.name}</td><td>${item.artist}</td><td>${item.adder}</td><td><a class="url" target="_blank" href="${item.url}">Ecouter ▶️</a></td></tr>`;
-    });
-
-    tableHTML += '</div> </table>';
-    res.send(communHTML+tableHTML);
-  }
-  else {
+    res.send(communHTML + tableHTML);
+  } else {
     res.send(communHTML + "<h1>Aucun titre</h1>");
   }
 }
 
-// #endregion
-
-// #region Get tracks from Spotify
-
-//this is the page user is redirected to after accepting data use on spotify's website
-//it does not have to be /account, it can be whatever page you want it to be
 app.get("/account", async (req, res) => {
-    if (req.query.code === undefined) { return res.redirect('/'); }
+  try {
+    if (!req.query.code) {
+      return res.redirect('/');
+    }
+
     const accessToken = await getAccessToken(req.query.code, res);
-    const userId = await getUserId(res,accessToken);
+    const userId = await getUserId(res, accessToken);
     addUser(userId);
 
-    // all_playlists = await getAllPlaylist(res, accessToken);
-    // const playlist_id = all_playlists.data["items"].filter((item) => item.name === "WtfCanadianTapeN°001")[0]["id"]; 
+    const playlistId = process.env.SPOTIFY_PLAYLIST_ID;
 
-    const playlist_id = process.env.SPOTIFY_PLAYLIST_ID
-
-    playlist_tracks = await getPlaylistTracks(res,accessToken,playlist_id,setToTrack=true); // setToTrack=true to get the tracks as Track objects
-    allTrack = playlist_tracks;
+    const playlistTracks = await getPlaylistTracks(res, accessToken, playlistId, true);
+    allTrack = playlistTracks;
 
     setTrackList(allTrack);
 
-    // console.log(playlist_tracks);
-    // const track_to_delete = playlist_tracks.filter((item) => item.name === "Hello (feat. A Boogie Wit da Hoodie)");
-    
-    // var track_id = track_to_delete[0]["id"];
-    // await deleteTrack(res,accessToken,playlist_id,track_id);
-    let username = nameDict[current_user.id];
+    const username = nameDict[current_user.id];
     res.cookie("username", username);
     logConnect(username);
     return res.redirect('/track_list');
-})
+  } catch (error) {
+    console.error('Une erreur s\'est produite lors du traitement de la route "/account":', error);
+    return res.redirect('/');
+  }
+});
 
-async function isTokenValid(res,accessToken) {
+
+async function isTokenValid(res, accessToken) {
   const token_valid = await axios.get(
     "https://api.spotify.com/v1/artists/0TnOYISbd1XYRBk9myaseg",
     {
@@ -424,47 +436,58 @@ async function isTokenValid(res,accessToken) {
   return true;
 }
 
-async function getAccessToken(code,res) {
-  const spotifyResponse = await axios.post(
-    "https://accounts.spotify.com/api/token",
-    queryString.stringify({
-      grant_type: "authorization_code",
-      code: code,
-      redirect_uri: redirectURI,
-    }),
-    {
-      headers: {
-        Authorization: "Basic " + base64ClientID,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+async function getAccessToken(code, res) {
+  try {
+    const spotifyResponse = await axios.post(
+      "https://accounts.spotify.com/api/token",
+      queryString.stringify({
+        grant_type: "authorization_code",
+        code: code,
+        redirect_uri: redirectURI,
+      }),
+      {
+        headers: {
+          Authorization: "Basic " + base64ClientID,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    if (spotifyResponse.data.error) {
+      throw new Error("Error: " + spotifyResponse.data.error);
     }
-  );
-  if (spotifyResponse.data.error) {
-    res.send("Error: " + spotifyResponse.data.error);
-    return res.redirect('/');
+
+    return spotifyResponse.data.access_token;
+  } catch (error) {
+    console.error("Une erreur s'est produite lors de la récupération de l'access token:", error.message);
+    res.redirect('/');
+    throw error;
   }
-  var accessToken = spotifyResponse.data.access_token;
-  return accessToken;
 }
 
-async function getUserId(res,accessToken) {
-  const userid = await axios.get(
-    "https://api.spotify.com/v1/me",
-    {
+
+async function getUserId(res, accessToken) {
+  try {
+    const response = await axios.get("https://api.spotify.com/v1/me", {
       headers: {
         Authorization: "Bearer " + accessToken,
       },
-    }
-  );
+    });
 
-  if (userid.data.error) {
-    res.send("Error: " + userid.data.error);
-    return res.redirect('/');
+    if (response.data.error) {
+      throw new Error("Error: " + response.data.error);
+    }
+
+    return response.data.id;
+  } catch (error) {
+    console.error("Une erreur s'est produite lors de la récupération de l'ID de l'utilisateur:", error.message);
+    res.redirect('/');
+    throw error;
   }
-  return userid.data["id"];
 }
 
-async function getAllPlaylist(res,accessToken) {
+
+async function getAllPlaylist(res, accessToken) {
   const all_playlists = await axios.get(
     "https://api.spotify.com/v1/me/playlists",
     {
@@ -481,41 +504,58 @@ async function getAllPlaylist(res,accessToken) {
   return all_playlists;
 }
 
-async function getPlaylistTracks(res,accessToken,playlist_id,setToTrack=false) {
-  const playlist_tracks = await axios.get(
-    "https://api.spotify.com/v1/playlists/"+playlist_id+"/tracks",
-    {
-      headers: {
-        Authorization: "Bearer " + accessToken,
-      },
-    }
-  );
+async function getPlaylistTracks(res, accessToken, playlist_id, setToTrack = false) {
+  try {
+    const response = await axios.get(
+      `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`,
+      {
+        headers: {
+          Authorization: "Bearer " + accessToken,
+        },
+      }
+    );
 
-  if (playlist_tracks.data.error) {
-    res.send("Error: " + playlist_tracks.data.error);
-    return res.redirect('/');
-  }
-  if (setToTrack) {
-    var all_tracks = playlist_tracks.data["items"];
-    all_tracks = all_tracks.map((item) => new Track(item["track"]["id"], item["track"]["name"], item["track"]["artists"][0]["name"], nameDict[item["added_by"]["id"]],item["track"]["external_urls"]["spotify"]));
-    return all_tracks;
-  }
-  else {
-    return playlist_tracks;
+    if (response.data.error) {
+      throw new Error("Error: " + response.data.error);
+    }
+
+    if (setToTrack) {
+      const all_tracks = response.data.items.map(item => {
+        const track = item.track;
+        const added_by_id = item.added_by.id;
+        const track_id = track.id;
+        const track_name = track.name;
+        const track_artist = track.artists[0].name;
+        const track_adder = nameDict[added_by_id];
+        const track_url = track.external_urls.spotify;
+        return new Track(track_id, track_name, track_artist, track_adder, track_url);
+      });
+
+      return all_tracks;
+    } else {
+      return response.data;
+    }
+  } catch (error) {
+    console.error("Une erreur s'est produite lors de la récupération des pistes de la playlist:", error.message);
+    res.redirect('/');
+    throw error;
   }
 }
 
-// #endregion
-
-// #region Poll
-
 app.get("/poll", (req, res) => {
-  if (req.cookies.username === undefined || allTrack.length === 0) { res.redirect('/'); }
+  if (req.cookies.username === undefined || allTrack.length === 0) {
+    return res.redirect('/');
+  }
+
   log(req, res, "a visité la page /poll");
+
   if (allTrack.length > 0) {
     const maxValue = allTrack.length - 1;
     const randomNumber = generateRandomNumber(maxValue);
     const track = allTrack[randomNumber];
+
+    const voteText = current_user.vote === 0 ? "Tu n'as pas encore voté" : "Tu as voté, mais tu peux modifier ton vote";
+
     res.send(`<style>
       $fontStack: Verdana, sans-serif, Helvetica, Arial
       $primaryColor: #00db7f
@@ -761,59 +801,59 @@ app.get("/poll", (req, res) => {
     </style>
 
     <div id="btns" style="text-align: center;">
-      <a id="refresh" href='/track_list'>Retour</a>
-    </div>
+    <a id="refresh" href='/track_list'>Retour</a>
+  </div>
 
-    <div id="Info">
-      <h1 id="info-title">Sondage du jour</h1>
-      <p id="info-desc">${req.cookies["username"]}, tu as jusqu'à 23h59 pour voter sur le maintien de la musique dans la playlist. (UTC+2, Paris)</p>
-      <p id="info-vote">${current_user.vote == 0?"Tu n'as pas encore voté":"Tu as voté, mais tu peux modifier ton vote"}</p>
-    </div>
+  <div id="Info">
+    <h1 id="info-title">Sondage du jour</h1>
+    <p id="info-desc">${req.cookies["username"]}, tu as jusqu'à 23h59 pour voter sur le maintien de la musique dans la playlist. (UTC+2, Paris)</p>
+    <p id="info-vote">${voteText}</p>
+  </div>
 
-    <div id="container">
-      <div class="beatiful-card">
-        <div class="holderPart">
-          <h3 class="title">${track.name}</h3>
-          <h4 class="subtitle">par ${track.artist}</h4>
-          <p class="adder">Ajoutée par ${track.adder}</p>
-          <p class="link"><a class="url" target="_blank" href="${track.url}">Ecouter ▶️</a></p>
-          <div id="YesVote" onclick="location.href='/vote?vote=yes';">
-            <p class="yesno">Oui</p>
-            <i class="zmdi zmdi-favorite">
-              <p class="icon">👍</p>
-            </i>
-          </div>
-          <div id="NoVote"  onclick="location.href='/vote?vote=no';">            
-            <p class="yesno">Non</p>
-            <i class="zmdi zmdi-favorite">
-              <p class="icon">👎</p>
-            </i>
-          </div>
+  <div id="container">
+    <div class="beatiful-card">
+      <div class="holderPart">
+        <h3 class="title">${track.name}</h3>
+        <h4 class="subtitle">par ${track.artist}</h4>
+        <p class="adder">Ajoutée par ${track.adder}</p>
+        <p class="link"><a class="url" target="_blank" href="${track.url}">Ecouter ▶️</a></p>
+        <div id="YesVote" onclick="location.href='/vote?vote=yes';">
+          <p class="yesno">Oui</p>
+          <i class="zmdi zmdi-favorite">
+            <p class="icon">👍</p>
+          </i>
+        </div>
+        <div id="NoVote"  onclick="location.href='/vote?vote=no';">            
+          <p class="yesno">Non</p>
+          <i class="zmdi zmdi-favorite">
+            <p class="icon">👎</p>
+          </i>
         </div>
       </div>
     </div>
+  </div>
 
-    <script>
+  <script>
     var btnYes = document.getElementById("YesVote");
     var btnNo = document.getElementById("NoVote");
-    refreshBtnColor();
+
     function refreshBtnColor() {
-      var btnYes = document.getElementById("YesVote");
-      var btnNo = document.getElementById("NoVote");
       if (btnYes != null && btnNo != null) {
-        if (${current_user.vote} == 1) {
+        if (${current_user.vote} === 1) {
           btnYes.style.backgroundColor = "#03903e";
-        }
-        else if (${current_user.vote} == -1) {
+        } else if (${current_user.vote} === -1) {
           btnNo.style.backgroundColor = "#03903e";
         }
       }
     }
     
-    btnYes.addEventListener("click", refreshBtnColor());
-    btnNo.addEventListener("click", refreshBtnColor());
-    </script>
-    `);
+    btnYes.addEventListener("click", refreshBtnColor);
+    btnNo.addEventListener("click", refreshBtnColor);
+
+    // Appeler refreshBtnColor une fois au chargement de la page pour définir la couleur des boutons de vote
+    refreshBtnColor();
+  </script>
+`);
   }
 });
 
@@ -835,29 +875,29 @@ function generateRandomNumber(maxValue) {
   const randomNumber = parseInt(hash.toString(), 16);
 
   // Renvoyer un nombre aléatoire entre 0 et 1 pour le jour donné
-  return Math.round((randomNumber / (Math.pow(2, 256) - 1))*maxValue);
+  return Math.round((randomNumber / (Math.pow(2, 256) - 1)) * maxValue);
 }
 
 app.get("/vote", (req, res) => {
-  if (req.cookies.username === undefined || allTrack.length === 0) { return res.redirect('/'); }
-  log(req, res, "a voté : "+req.query.vote);
-  if (req.query.vote == "yes") {
-    current_user.vote = 1;
+  if (req.cookies.username === undefined || allTrack.length === 0) {
+    return res.redirect('/');
   }
-  else if (req.query.vote == "no") {
+
+  log(req, res, "a voté : " + req.query.vote);
+
+  if (req.query.vote === "yes") {
+    current_user.vote = 1;
+  } else if (req.query.vote === "no") {
     current_user.vote = -1;
   }
+
   modifyUser(current_user);
+
   return res.redirect("/poll");
-});  
-
-// #endregion
-
-// #region Delete Track and Reset Users
+});
 
 app.post("/delete", async (req, res) => {
-  if (req.body.code != process.env.DELETE_SECURE_CODE)
-  {
+  if (req.body.code != process.env.DELETE_SECURE_CODE) {
     return res.redirect("/");
   }
   else {
@@ -865,163 +905,149 @@ app.post("/delete", async (req, res) => {
   }
 });
 
-async function checkIfDelete() 
-{
-  var jsonData = [];
-  if ( !fs.existsSync(process.env.BDD_FILEPATH)) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
-  fs.readFile(process.env.BDD_FILEPATH, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err)
-      return
-    }
-    parseJson = JSON.parse(data);
-    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
-    var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
+async function checkIfDelete() {
+  try {
+    const data = await fs.promises.readFile(DBPath, 'utf8');
+    const parseJson = JSON.parse(data);
+    const usersData = parseJson["users"].map(user => new User(user.id, user.name, user.vote, user.push_vote));
+    const tracksData = parseJson["tracks"].map(track => new Track(track.id, track.name, track.artist, track.adder, track.url));
 
-    const maxValue = tracksData.length - 1;
-    const randomNumber = generateRandomNumber(maxValue);
-    const track = tracksData[randomNumber];
+    const noVote = usersData.filter((item) => item.vote === -1).length;
 
-    var noVote = usersData.filter((item) => item.vote === -1).length;
-  
-    logActionBot("Nombre de vote pour la suppression : "+ noVote);
+    logActionBot("Nombre de vote pour la suppression : " + noVote);
 
     if (noVote === 2) {
-      logActionBot("Suppression de la musique : "+track.name+" par "+track.artist);
-      deleteTrack(res,accessToken,playlist_id,track.id);
+      const maxValue = tracksData.length - 1;
+      const randomNumber = generateRandomNumber(maxValue);
+      const track = tracksData[randomNumber];
+
+      logActionBot("Suppression de la musique : " + track.name + " par " + track.artist);
+      deleteTrack(res, accessToken, playlist_id, track.id);
     }
+
     resetAllUsers();
-    logReadBot([noVote,track.name,track.artist]);
-  });
-}
-
-async function deleteTrack(res,accessToken,playlist_id,track_id) {
-  const delete_track = await axios.delete(
-  "https://api.spotify.com/v1/playlists/"+playlist_id+"/tracks",
-  {
-    headers: {
-      Authorization: "Bearer " + accessToken,
-      "Content-Type": "application/json"
-    },
-    data: {
-      tracks: [
-        {
-          uri: "spotify:track:"+track_id
-        }
-      ]
-    }
-  }
-  );
-
-  if (delete_track.data.error) {
-  res.send("Error: " + delete_track.data.error);
-  return res.redirect('/track_list');
+    logReadBot([noVote, track.name, track.artist]);
+  } catch (err) {
+    console.error(err);
   }
 }
 
-function resetAllUsers()
-{
-  var jsonData = [];
-  if ( !fs.existsSync(process.env.BDD_FILEPATH)) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
-  fs.readFile(process.env.BDD_FILEPATH, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err)
-      return
-    }
-    parseJson = JSON.parse(data);
-    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
-    var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
 
-    usersData.forEach(user => {
+async function deleteTrack(res, accessToken, playlist_id, track_id) {
+  try {
+    const delete_track = await axios({
+      method: "delete",
+      url: `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      data: {
+        tracks: [{ uri: `spotify:track:${track_id}` }],
+      },
+    });
+
+    if (delete_track.data.error) {
+      res.send("Error: " + delete_track.data.error);
+      return res.redirect('/track_list');
+    }
+  } catch (err) {
+    console.error(err);
+    res.send("Error: " + err.message);
+    return res.redirect('/track_list');
+  }
+}
+
+async function resetAllUsers() {
+  try {
+    // Vérifier si le fichier existe, sinon créer un fichier vide
+    if (!fs.existsSync(DBPath)) {
+      fs.writeFileSync(DBPath, JSON.stringify({ "users": [], "tracks": [] }));
+    }
+
+    // Lire le contenu du fichier JSON
+    const data = fs.readFileSync(DBPath, 'utf8');
+    const parseJson = JSON.parse(data);
+
+    // Remettre à zéro les votes de tous les utilisateurs
+    const usersData = parseJson["users"].map(user => {
       user.vote = 0;
       user.push_vote = 0;
+      return new User(user.id, user.name, user.vote, user.push_vote);
     });
 
-    logActionBot("Reset des votes");  
-    combineJson = {"users":usersData,"tracks":tracksData}
-    jsonData = JSON.stringify(combineJson, null, 2);
+    logActionBot("Reset des votes");
 
-    // Chemin du fichier où nous voulons écrire les données JSON
-    const filePath = process.env.BDD_FILEPATH;
-  
+    // Mettre à jour les données dans le fichier JSON
+    const combineJson = { "users": usersData, "tracks": parseJson["tracks"] };
+    const jsonData = JSON.stringify(combineJson, null, 2);
+
     // Écrire les données JSON dans le fichier
-    fs.writeFile(filePath, jsonData, 'utf8', (err) => {
-      if (err) {
-        console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
-      } else {
-        //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
-      }
-    });
-  });
+    fs.writeFileSync(DBPath, jsonData, 'utf8');
+
+  } catch (err) {
+    console.error('Une erreur s\'est produite lors de la réinitialisation des votes:', err);
+  }
 }
 
-// #endregion
-
-// #region Log
-
-function log(req, res, info) {
+function getCurrentDateTime() {
   const date = new Date();
-  const time = date.getDate().toString()+"/"+((date.getMonth()+1)+1).toString()+"/"+date.getFullYear().toString()+" à "+date.getHours().toString()+":"+date.getMinutes().toString()+":"+date.getSeconds().toString()+" => ";
-  fs.appendFile('./views/static/log.txt', time+req.cookies["username"]+ " "+info+"\n", function (err) 
-  {
+  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} à ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+}
+
+function log(info) {
+  const logEntry = `${getCurrentDateTime()} => ${info}\n`;
+  fs.appendFile('./views/static/log.txt', logEntry, function (err) {
     if (err) throw err;
-  }
-  );
+  });
 }
 
 function logConnect(username) {
-  const date = new Date();
-  const time = date.getDate().toString()+"/"+((date.getMonth()+1)+1).toString()+"/"+date.getFullYear().toString()+" à "+date.getHours().toString()+":"+date.getMinutes().toString()+":"+date.getSeconds().toString()+" => ";
-  fs.appendFile('./views/static/log.txt', time+username+ " "+"s'est connecté avec succès\n", function (err) 
-  {
+  const logEntry = `${getCurrentDateTime()} => ${username} s'est connecté avec succès\n`;
+  fs.appendFile('./views/static/log.txt', logEntry, function (err) {
     if (err) throw err;
-  }
-  );
+  });
 }
 
 function logReadBot(info) {
-  const date = new Date();
-  const time = date.getDate().toString()+"/"+(date.getMonth()+1).toString()+"/"+date.getFullYear().toString()+" => ";
-  fs.writeFile('./views/static/readResult.txt', time + "Il y a eu " + info[0] + " vote(s) pour la suppression de " + info[1] + " par " + info[2] +"\n", function (err) 
-  {
+  const logEntry = `${getCurrentDateTime()} => Il y a eu ${info[0]} vote(s) pour la suppression de ${info[1]} par ${info[2]}\n`;
+  fs.writeFile('./views/static/readResult.txt', logEntry, function (err) {
     if (err) throw err;
-  }
-  );
-
+  });
 }
 
 app.get("/result", (req, res) => {
-  if ( fs.existsSync('./views/static/readResult.txt'))
-  {
-    fs.readFile('./views/static/readResult.txt', 'utf8', (err, data) => {
-      if (err) {
-        console.error(err)
-        return
-      }
-      res.send(data);
-    });
-  }
-  else {
+  const resultFilePath = './views/static/readResult.txt';
+
+  if (fs.existsSync(resultFilePath)) {
+    fs.readFile(resultFilePath, 'utf8')
+      .then(data => res.send(data))
+      .catch(err => {
+        console.error(err);
+        res.send("Une erreur s'est produite lors de la lecture du fichier de résultats.");
+      });
+  } else {
     res.send("Aucun résultat");
   }
 });
 
-
 function logActionBot(info) {
   const date = new Date();
-  const time = date.getDate().toString()+"/"+(date.getMonth()+1).toString()+"/"+date.getFullYear().toString()+" à "+date.getHours().toString()+":"+date.getMinutes().toString()+":"+date.getSeconds().toString()+" => ";
-  fs.appendFile('./views/static/log.txt', time+ " "+info+"\n", function (err) 
-  {
+  const time = date.getDate().toString() + "/" + (date.getMonth() + 1).toString() + "/" + date.getFullYear().toString() + " à " + date.getHours().toString() + ":" + date.getMinutes().toString() + ":" + date.getSeconds().toString() + " => ";
+  fs.appendFile('./views/static/log.txt', time + " " + info + "\n", function (err) {
     if (err) throw err;
   }
   );
-
 }
 
-// #endregion
-
 app.post("/test", (req, res) => {
-  console.log("test"); 
+  console.log("test");
   console.log(req.body);
+  return res.redirect("/");
+});
+
+app.get("/test", (req, res) => {
+  current_user.vote = 1
+  modifyUser(current_user)
   return res.redirect("/");
 });
