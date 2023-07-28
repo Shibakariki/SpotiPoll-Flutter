@@ -15,6 +15,22 @@ const nameDict = {
   "312qcpi3foqze5fnflaounnkpul4": "Le goat"
 }
 
+// Liste des noms de variables d'environnement requises
+const requiredEnvVariables = ['BDD_FILEPATH', 'REDIRECT_URL', 'DISCORD_CHANNEL_ID', 'DISCORD_TOKEN', 'DELETE_SECURE_CODE', 'SPOTIFY_PLAYLIST_ID', 'SPOTIFY_CLIENT_SECRET', 'SPOTIFY_CLIENT_ID'];
+
+// Fonction de vérification des variables d'environnement
+function checkEnvVariables() {
+  const missingVariables = requiredEnvVariables.filter(variable => !process.env[variable]);
+  if (missingVariables.length > 0) {
+    console.error('Les variables d\'environnement suivantes sont manquantes :', missingVariables.join(', '));
+    process.exit(1); // Arrêter le processus Node.js avec un code d'erreur
+  } else {
+    console.log('Toutes les variables d\'environnement sont présentes. Le serveur peut être démarré.');
+  }
+}
+
+checkEnvVariables()
+
 const clientID = process.env.SPOTIFY_CLIENT_ID;
 const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
