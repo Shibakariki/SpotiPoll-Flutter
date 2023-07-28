@@ -7,8 +7,7 @@ const client = new Discord.Client({ intents: [
     Discord.GatewayIntentBits.MessageContent,
   ]})
 const token = process.env.DISCORD_TOKEN;
-const redirectURI = "http://localhost:1443/";
-//const redirectURI = "http://mennessi.iiens.net/";
+const redirectURI = process.env.REDIRECT_URL
 
 const axios = require('axios');
 const cron = require('cron');

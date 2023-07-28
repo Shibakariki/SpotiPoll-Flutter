@@ -3,7 +3,8 @@ const app = express();
 const queryString = require("node:querystring");
 const axios = require("axios");
 const CryptoJS = require("crypto-js");
-var cookieParser = require('cookie-parser');  
+var cookieParser = require('cookie-parser');
+require('dotenv').config();
 
 const fs = require("fs");
 
@@ -14,12 +15,11 @@ const nameDict = {
   "312qcpi3foqze5fnflaounnkpul4": "Le goat"
 }
 
-const clientID = "41eb08913f8b43e98d5b1c498f126541";
-const clientSecret = "59c9a6dfb1b24f519ecf944098a83661";
+const clientID = process.env.SPOTIFY_CLIENT_ID;
+const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
 const base64ClientID = Buffer.from(clientID + ":" + clientSecret).toString("base64");
-//const redirectURI = "http://localhost:1443/account";
-const redirectURI = "http://mennessi.iiens.net/account";
+const redirectURI = process.env.REDIRECT_URL
 
 const scope =
     `user-modify-playback-state
@@ -357,7 +357,7 @@ app.get("/account", async (req, res) => {
     // all_playlists = await getAllPlaylist(res, accessToken);
     // const playlist_id = all_playlists.data["items"].filter((item) => item.name === "WtfCanadianTapeN°001")[0]["id"]; 
 
-    const playlist_id = "0zwxvVl7yOd2qeb3tQgd5Q"
+    const playlist_id = process.env.SPOTIFY_PLAYLIST_ID
 
     playlist_tracks = await getPlaylistTracks(res,accessToken,playlist_id,setToTrack=true); // setToTrack=true to get the tracks as Track objects
     allTrack = playlist_tracks;
@@ -823,7 +823,7 @@ app.get("/vote", (req, res) => {
 // #region Delete Track and Reset Users
 
 app.post("/delete", async (req, res) => {
-  if (req.body.code != "iziLeCodeDuBot")
+  if (req.body.code != process.env.DELETE_SECURE_CODE)
   {
     return res.redirect("/");
   }
