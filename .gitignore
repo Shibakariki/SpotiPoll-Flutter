@@ -156,4 +156,7 @@ dist
 *.wat
 *.xhtml
 
+views/static/log.txt
+views/static/fichier.json
+
 # End of https://www.toptal.com/developers/gitignore/api/node,web
