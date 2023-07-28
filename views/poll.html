@@ -1,0 +1,390 @@
+<html>
+<style>
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+    }
+
+    body {
+        width: 100%;
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        background: linear-gradient(95deg, #00db7f 0%, #1DB954 40%, #03903e 100%);
+        margin: 0;
+        padding: 0;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+    }
+
+    #btns {
+        text-align: center;
+        display: block;
+        margin: 1%;
+    }
+
+    #sondage {
+        background-color: #696969;
+        border: none;
+        color: #FFFFFF;
+        cursor: pointer;
+        font-size: 17px;
+        font-weight: 700;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        line-height: 41px;
+        padding: 15px 40px;
+        text-align: center;
+        text-decoration: none;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    #sondage:hover {
+        background-color: #03903e;
+        transition: ease-in-out 0.5s;
+    }
+
+    #refresh {
+        background-color: #696969;
+        border: none;
+        color: #FFFFFF;
+        cursor: pointer;
+        font-size: 17px;
+        font-weight: 700;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        line-height: 41px;
+        padding: 15px 40px;
+        text-align: center;
+        text-decoration: none;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    #refresh:hover {
+        background-color: #EE4B2B;
+        transition: ease-in-out 0.5s;
+    }
+
+    #container {
+        perspective: 25px;
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+    }
+
+    .beatiful-card {
+        display: flex;
+        width: 400px;
+        height: 185px;
+        position: relative;
+        border-radius: 20px;
+        background: #fff;
+        transition: transform 0.5s;
+        -webkit-transition: transform 0.5s;
+        box-shadow: 0 30px 35px -14px rgba(111, 208, 50, 0.58);
+    }
+
+    .beatiful-card:after,
+    .beatiful-card:before {
+        content: " ";
+        position: absolute;
+        bottom: -13px;
+        left: 10px;
+        right: 10px;
+        margin: 0 5px;
+        background: #b8bd8d4f;
+        z-index: -3;
+        height: 13px;
+        transition: bottom ease 0.1s;
+        border-bottom-left-radius: 14px;
+        border-bottom-right-radius: 14px;
+    }
+
+    .beatiful-card:after {
+        background: rgba(184, 189, 141, 0.25);
+        height: 21px;
+        bottom: -22px;
+        right: 25px;
+        left: 25px;
+    }
+
+    .beatiful-card:hover:before {
+        bottom: -13px;
+    }
+
+    .beatiful-card:hover:after {
+        bottom: -22px;
+    }
+
+    .beatiful-card:hover img {
+        transform: scale(1.06);
+    }
+
+    .beatiful-card .holderPart {
+        display: flex;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .beatiful-card .holderPart .title,
+    .beatiful-card .holderPart .subtitle {
+        font-size: 22px;
+        padding: 0 16px;
+        position: relative;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        display: flex;
+        z-index: 5;
+        width: 88%;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        transition: transform 0.4s ease, filter 0.4s ease, -webkit-transform 0.4s ease, -webkit-filter 0.4s ease;
+        justify-content: flex-start;
+        margin: 10px 0px 0px 0px;
+    }
+
+    .beatiful-card .holderPart .subtitle {
+        margin: 0px 0px 15px 0px;
+    }
+
+    .beatiful-card .holderPart #YesVote,
+    .beatiful-card .holderPart #NoVote {
+        color: #fff;
+        padding: 8px 11px 12px 22px;
+        margin: 0px 7%;
+        background: #00db7f;
+        border-radius: 20px;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        cursor: pointer;
+        box-shadow: 0 6px 14px -4px rgba(54, 55, 149, 0.42);
+        position: relative;
+        width: 27%;
+        top: -15px;
+        display: flex;
+        align-items: center;
+    }
+
+    .beatiful-card .holderPart #YesVote:hover,
+    .beatiful-card .holderPart #NoVote:hover {
+        background: #03903e;
+    }
+
+    .beatiful-card .holderPart #YesVote:hover i,
+    .beatiful-card .holderPart #NoVote:hover i {
+        transform: scale(1.08);
+    }
+
+    .beatiful-card .holderPart #YesVote i,
+    .beatiful-card .holderPart #NoVote i {
+        background: rgba(0, 0, 0, 0.5);
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        padding: 6px 6px;
+        left: 50px;
+        border-radius: 100%;
+        position: relative;
+        transition: transform ease-in-out 0.3s;
+        top: 2px;
+        font-style: normal;
+    }
+
+    .beatiful-card .holderPart .adder {
+        height: 10px;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        font-size: 14px;
+        z-index: 1;
+        width: 42%;
+        top: -12%;
+        left: 5%;
+        position: relative;
+        margin: 15px 0px 20px 0px;
+    }
+
+    .beatiful-card .holderPart .link {
+        height: 10px;
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        font-size: 14px;
+        z-index: 1;
+        width: 42%;
+        top: -12%;
+        left: 32%;
+        position: relative;
+        margin: 15px 0px 20px 0px;
+    }
+
+    .beatiful-card .holderPart .link .url {
+        text-decoration: none;
+        color: #00A6ED;
+        border: 1px solid #00A6ED;
+        border-radius: 5px;
+        padding: 2px;
+        background-color: #ffffff99;
+    }
+
+    .yesno {
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        display: block;
+        width: 10px;
+        margin: 0;
+        position: relative;
+    }
+
+    .icon {
+        font-family: Verdana, sans-serif, Helvetica, Arial;
+        position: relative;
+        margin: 0;
+        font-size: 20px;
+        top: -2px;
+    }
+
+    #Info {
+        width: 100%;
+        height: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        top: -25%;
+        color: #fff;
+    }
+
+    #info-title {
+        font-size: 30px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    #info-desc {
+        font-size: 20px;
+        font-weight: 400;
+        margin: 0;
+        padding: 0;
+    }
+
+    #info-vote {
+        font-size: 20px;
+        font-weight: 400;
+        margin: 0;
+        padding: 0;
+    }
+</style>
+
+<div id="btns" style="text-align: center;">
+    <a id="refresh" href='/track_list'>Retour</a>
+</div>
+
+<div id="Info">
+    <h1 id="info-title">Sondage du jour</h1>
+    <p id="info-desc"><span id="username-placeholder"></span>, tu as jusqu'à 23h59 pour voter sur le maintien de la
+        musique dans la
+        playlist. (UTC+2, Paris)</p>
+    <p id="info-vote"><span id="infovote-placeholder"></span></p>
+</div>
+
+<div id="container">
+    <div class="beatiful-card">
+        <div class="holderPart">
+            <h3 class="title"><span id="trackename-placeholder"></span></h3>
+            <h4 class="subtitle">par <span id="trackartist-placeholder"></span></h4>
+            <p class="adder">Ajoutée par <span id="trackadder-placeholder"></span></p>
+            <p class="link"><a class="url" id="trackurl" target="_blank" href="">Ecouter ▶️</a></p>
+            <div id="YesVote" onclick="location.href='/vote?vote=yes';">
+                <p class="yesno">Oui</p>
+                <i class="zmdi zmdi-favorite">
+                    <p class="icon">👍</p>
+                </i>
+            </div>
+            <div id="NoVote" onclick="location.href='/vote?vote=no';">
+                <p class="yesno">Non</p>
+                <i class="zmdi zmdi-favorite">
+                    <p class="icon">👎</p>
+                </i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    // Récupérer la valeur du cookie "username"
+    var username = getCookieValue("username");
+
+    // Remplacer le contenu de l'élément avec l'ID "username-placeholder" par la valeur du cookie "username"
+    var usernamePlaceholder = document.getElementById("username-placeholder");
+    if (usernamePlaceholder) {
+        usernamePlaceholder.textContent = username;
+    }
+
+    // Fonction pour récupérer la valeur d'un cookie en fonction de son nom
+    function getCookieValue(name) {
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
+        if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+
+    function updatePageWithPollData(data) {
+
+        var trackenamePlaceholder = document.getElementById("trackename-placeholder");
+        if (trackenamePlaceholder) {
+            trackenamePlaceholder.textContent = data.track.name;
+        }
+
+        var trackartistPlaceholder = document.getElementById("trackartist-placeholder");
+        if (trackartistPlaceholder) {
+            trackartistPlaceholder.textContent = data.track.artist;
+        }
+
+        var trackadderPlaceholder = document.getElementById("trackadder-placeholder");
+        if (trackadderPlaceholder) {
+            trackadderPlaceholder.textContent = data.track.adder;
+        }
+
+        var infovotePlaceholder = document.getElementById("infovote-placeholder");
+        if (infovotePlaceholder) {
+            infovotePlaceholder.textContent = data.voteText;
+        }
+
+        var trackURL = document.getElementById("trackurl");
+        if (trackURL) {
+            trackURL.href = data.track.url;
+        }
+    }
+
+    // Function to fetch poll data from the server
+    function fetchPollData() {
+        fetch("/getPollData")
+            .then((response) => response.json())
+            .then((data) => {
+                updatePageWithPollData(data);
+            })
+            .catch((error) => {
+                console.error("Error fetching poll data:", error);
+            });
+    }
+
+    var btnYes = document.getElementById("YesVote");
+    var btnNo = document.getElementById("NoVote");
+
+    function refreshBtnColor() {
+        /*if (btnYes != null && btnNo != null) {
+          if (${current_user.vote} === 1) {
+            btnYes.style.backgroundColor = "#03903e";
+          } else if (${current_user.vote} === -1) {
+            btnNo.style.backgroundColor = "#03903e";
+          }
+        }*/
+    }
+
+    btnYes.addEventListener("click", refreshBtnColor);
+    btnNo.addEventListener("click", refreshBtnColor);
+
+    fetchPollData();
+
+    // Appeler refreshBtnColor une fois au chargement de la page pour définir la couleur des boutons de vote
+    refreshBtnColor();
+</script>
+
+</html>
