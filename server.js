@@ -150,6 +150,41 @@ function addUser(userId) {
   });
 }
 
+function modifyUser(user) {
+  var jsonData = [];
+  if ( !fs.existsSync(process.env.BDD_FILEPATH)) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
+  fs.readFile(process.env.BDD_FILEPATH, 'utf8', (err, data) => {
+    if (err) {
+      console.error(err)
+      return
+    }
+    parseJson = JSON.parse(data);
+    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
+    var tracksData = parseJson["tracks"].map(track => new Track(track.id,track.name,track.artist,track.adder,track.url));
+
+    const indexToUpdate = usersData.findIndex((item) => item.id === user.id);
+
+    if (indexToUpdate !== -1) {
+      usersData[indexToUpdate] = user;
+    }
+    combineJson = {"users":usersData,"tracks":tracksData}
+    jsonData = JSON.stringify(combineJson, null, 2);
+
+    // Chemin du fichier où nous voulons écrire les données JSON
+    const filePath = process.env.BDD_FILEPATH;
+  
+    // Écrire les données JSON dans le fichier
+    fs.writeFile(filePath, jsonData, 'utf8', (err) => {
+      if (err) {
+        console.error('Une erreur s\'est produite lors de l\'écriture dans le fichier:', err);
+      } else {
+        //console.log('Les données ont été écrites avec succès dans le fichier JSON.');
+      }
+    });
+  });
+}
+
+
 
 // #endregion
 
