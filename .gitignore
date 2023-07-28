@@ -141,21 +141,6 @@ dist
 # SvelteKit build / generate output
 .svelte-kit
 
-### Web ###
-*.asp
-*.cer
-*.csr
-*.css
-*.htm
-*.html
-*.js
-*.jsp
-*.php
-*.rss
-*.wasm
-*.wat
-*.xhtml
-
 views/static/log.txt
 views/static/fichier.json
 
