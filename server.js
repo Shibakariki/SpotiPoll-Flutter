@@ -1,12 +1,25 @@
-const express = require("express");
+import express from "express";
 const app = express();
-const queryString = require("node:querystring");
-const axios = require("axios");
-const CryptoJS = require("crypto-js");
-const cookieParser = require('cookie-parser');
-require('dotenv').config();
-const fs = require('fs').promises;
-const path = require('path');
+
+import queryString from "node:querystring";
+import axios from "axios";
+import CryptoJS from "crypto-js";
+import cookieParser from "cookie-parser";
+import { config as configDotenv } from "dotenv";
+configDotenv();
+
+import { promises as fs } from "fs";
+import path from "path";
+import PocketBase from "pocketbase/cjs";
+import { fileURLToPath } from 'url';
+
+import { dirname } from 'path';
+
+import eventsource from 'eventsource';
+
+global.EventSource = eventsource;
+
+const pb = new PocketBase('http://127.0.0.1:8090');
 
 const nameDict = {
   "uudinn": "Axel",
@@ -15,7 +28,10 @@ const nameDict = {
   "312qcpi3foqze5fnflaounnkpul4": "Le goat"
 }
 
-const DBFilePath = path.join(__dirname, process.env.BDD_FILEPATH)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const DBFilePath = path.join(__dirname, process.env.BDD_FILEPATH);
 
 // Liste des noms de variables d'environnement requises
 const requiredEnvVariables = ['BDD_FILEPATH', 'REDIRECT_URL', 'DISCORD_CHANNEL_ID', 'DISCORD_TOKEN', 'DELETE_SECURE_CODE', 'SPOTIFY_PLAYLIST_ID', 'SPOTIFY_CLIENT_SECRET', 'SPOTIFY_CLIENT_ID'];

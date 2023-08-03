@@ -1,4 +1,6 @@
 {
+  "main": "server.js",
+  "type": "module",
   "dependencies": {
     "axios": "^1.4.0",
     "cookie-parser": "^1.4.6",
@@ -6,8 +8,10 @@
     "crypto-js": "^4.1.1",
     "discord.js": "^14.11.0",
     "dotenv": "^16.3.1",
+    "eventsource": "^2.0.2",
     "express": "^4.18.2",
     "node-fetch": "^3.3.1",
+    "pocketbase": "^0.16.0",
     "querystring": "^0.2.1"
   }
 }
