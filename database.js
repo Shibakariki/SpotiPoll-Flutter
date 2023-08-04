@@ -49,4 +49,32 @@ export default class Database {
     const deletedRecord = await this.pb.collection('Track').delete(trackId);
     return deletedRecord;
   }
+
+  async addUser(userId,userName) {
+    try {
+      await this._checkAuthentication();
+
+        const data = {
+          "id_user": userId,
+          "username": userName
+        };
+
+        const addedUser = await this.pb.collection('User').create(data);
+
+        return addedUser;
+      
+    } catch (error) {
+      if (error.status !== 400) {
+        console.error('An error occurred while adding the user:', error);
+      }
+    }
+  }
+
+  async getUsersList() {
+    await this._checkAuthentication();
+    const records = await this.pb.collection('User').getFullList({
+        sort: '-created',
+    });
+    return records;
+  }
 }

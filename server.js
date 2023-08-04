@@ -109,30 +109,11 @@ app.get("/", async (req, res) => {
 async function addUser(userId) {
 
   try {
-    let jsonData = await readJSON(DBFilePath); // Lire le fichier JSON existant
-
-    if (!jsonData) {
-      // Si le fichier JSON est vide ou n'existe pas, initialiser les données
-      jsonData = { "users": [], "tracks": [] };
-    }
-
-    let user = jsonData["users"].find(user => user.id === userId);
-
-    if (!user) {
-      // Si l'utilisateur n'existe pas déjà, créer un nouvel utilisateur
-      user = new User(userId, nameDict[userId], 0, 0);
-      jsonData["users"].push(user); // Ajouter le nouvel utilisateur au tableau d'utilisateurs
-    }
-
-    await writeJSON(DBFilePath, jsonData); // Écrire les données mises à jour dans le fichier JSON
-
-    current_user = user;
+    await database.addUser(userId, nameDict[userId]);
   } catch (error) {
     console.error('Une erreur s\'est produite lors de l\'ajout de l\'utilisateur :', error);
   }
 }
-
-
 
 // Utilitaire pour lire le fichier JSON
 async function readJSON(filePath) {
@@ -292,25 +273,42 @@ app.get("/account", async (req, res) => {
 
     const accessToken = await getAccessToken(req.query.code, res);
     const userId = await getUserId(res, accessToken);
-    addUser(userId);
+    if (checkUserExist(userId,res)) {
+      // var playlistId = process.env.SPOTIFY_PLAYLIST_ID;
 
-    const playlistId = process.env.SPOTIFY_PLAYLIST_ID;
+      const allPlaylists = await getAllPlaylist(res, accessToken);
+      var playlistId = allPlaylists.data["items"].filter((item) => item.name === "WtfCanadianTapeN°001")[0]["id"];
 
-    const playlistTracks = await getPlaylistTracks(res, accessToken, playlistId, true);
-    allTrack = playlistTracks;
+      const playlistTracks = await getPlaylistTracks(res, accessToken, playlistId, true);
+      allTrack = playlistTracks;
 
-    saveTrackList(allTrack);
-
-    const username = nameDict[current_user.id];
-    res.cookie("username", username);
-    logConnect(username);
-    return res.redirect('/track_list');
+      saveTrackList(allTrack);
+      
+      logConnect(res.cookie.username);
+      return res.redirect('/track_list');
+    }
+    return res.redirect('/');
   } catch (error) {
     console.error('Une erreur s\'est produite lors du traitement de la route "/account":', error);
     return res.redirect('/');
   }
 });
 
+async function checkUserExist(userId,res) {
+  try {
+    const allUsers = await database.getUsersList();
+    if (allUsers.find((user) => user.id === userId))
+    {
+      addUser(userId);
+    }
+    res.cookie("username", nameDict[userId], { expires: new Date(Date.now() + 1800000), httpOnly: true }); //cookie expire in 30 minutes
+    return true;
+
+  } catch (error) {
+    console.error('Une erreur s\'est produite lors de la vérification de l\'existence de l\'utilisateur :', error);
+    return false;
+  }
+}
 
 async function isTokenValid(res, accessToken) {
   const token_valid = await axios.get(
