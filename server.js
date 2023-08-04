@@ -6,11 +6,13 @@ import axios from "axios";
 import CryptoJS from "crypto-js";
 import cookieParser from "cookie-parser";
 import { config as configDotenv } from "dotenv";
+
+import Database from './database.js';
+
 configDotenv();
 
 import { promises as fs } from "fs";
 import path from "path";
-import PocketBase from "pocketbase/cjs";
 import { fileURLToPath } from 'url';
 
 import { dirname } from 'path';
@@ -18,8 +20,6 @@ import { dirname } from 'path';
 import eventsource from 'eventsource';
 
 global.EventSource = eventsource;
-
-const pb = new PocketBase('http://127.0.0.1:8090');
 
 const nameDict = {
   "uudinn": "Axel",
@@ -66,6 +66,8 @@ const scope =
     playlist-modify-public`;
 
 var router = express.Router();
+
+const database = new Database();
 
 class Track {
   constructor(id, name, artist, adder, url) {
@@ -242,9 +244,20 @@ app.get("/getTrackList", async (req, res) => {
   }
 });
 
-async function setTrackList(all_tracks) {
+
+async function saveTrackList(all_tracks) {
   try {
     const fileExists = await fs.access(DBFilePath).then(() => true).catch(() => false);
+
+    // foreach track in all_tracks
+    // check if track.id is in the json file
+    // if not, add it
+    // if yes, do nothing
+    
+    for (var track of all_tracks) {
+      await database.addTrack(track);
+    }
+
 
     if (!fileExists) {
       await fs.writeFile(DBFilePath, '[]', 'utf8');
@@ -338,7 +351,7 @@ app.get("/account", async (req, res) => {
     const playlistTracks = await getPlaylistTracks(res, accessToken, playlistId, true);
     allTrack = playlistTracks;
 
-    setTrackList(allTrack);
+    saveTrackList(allTrack);
 
     const username = nameDict[current_user.id];
     res.cookie("username", username);
