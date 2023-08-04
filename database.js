@@ -1,4 +1,3 @@
-import { ClientResponseError } from "pocketbase";
 import PocketBase from "pocketbase/cjs";
 
 export default class Database {
@@ -23,25 +22,27 @@ export default class Database {
   }
 
   async addTrack(track) {
-    await this._checkAuthentication();
+    try {
+      await this._checkAuthentication();
 
-    console.log(track);
-    console.log(track.name);
+        const data = {
+          "id_track": track.id,
+          "name": track.name,
+          "artist": track.artist,
+          "adder": track.adder,
+          "url": track.url,
+        };
 
-    const data = {
-      "id_track": track.id,
-      "name": track.name,
-      "artist": track.artist,
-      "adder": track.adder,
-      "url": track.url,
-  };
-  
-  
-    const addedTrack = await this.pb.collection('Track').create(data);
-    
-    return addedTrack;
-  }
-  
+        const addedTrack = await this.pb.collection('Track').create(data);
+
+        return addedTrack;
+      
+    } catch (error) {
+      if (error.status !== 400) {
+        console.error('An error occurred while adding the track:', error);
+      }
+    }
+  }  
 
   async deleteTrack(trackId) {
     await this._checkAuthentication();
