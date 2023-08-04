@@ -65,8 +65,6 @@ const scope =
     playlist-read-private
     playlist-modify-public`;
 
-var router = express.Router();
-
 const database = new Database();
 
 class Track {
@@ -247,61 +245,11 @@ app.get("/getTrackList", async (req, res) => {
 
 async function saveTrackList(all_tracks) {
   try {
-    const fileExists = await fs.access(DBFilePath).then(() => true).catch(() => false);
-
-    // foreach track in all_tracks
-    // check if track.id is in the json file
-    // if not, add it
-    // if yes, do nothing
-    
     for (var track of all_tracks) {
       await database.addTrack(track);
     }
-
-
-    if (!fileExists) {
-      await fs.writeFile(DBFilePath, '[]', 'utf8');
-    }
-
-    const jsonData = await fs.readFile(DBFilePath, 'utf8');
-    let parseJson;
-
-    try {
-      parseJson = JSON.parse(jsonData);
-    } catch (err) {
-      // Si la lecture du fichier échoue ou les données ne sont pas valides JSON, on peut initialiser les valeurs par défaut
-      parseJson = { "users": [], "tracks": [] };
-    }
-
-    const usersData = Array.isArray(parseJson["users"]) ? parseJson["users"].map(user => new User(user.id, user.name, user.vote, user.push_vote)) : [];
-    const tracksData = Array.isArray(all_tracks) ? all_tracks.map(track => new Track(track.id, track.name, track.artist, track.adder, track.url)) : [];
-
-    const combineJson = { "users": usersData, "tracks": tracksData };
-    const updatedJsonData = JSON.stringify(combineJson, null, 2);
-
-    await fs.writeFile(DBFilePath, updatedJsonData, 'utf8');
-  } catch (err) {
-    console.error('Une erreur s\'est produite lors du traitement de la route "/account":', err);
-  }
-}
-
-async function saveTracks(all_tracks) {
-  try {
-    const jsonData = await readJSON(DBFilePath);
-
-    // Vérifier si parseJson["users"] est défini et est un tableau
-    const usersData = Array.isArray(jsonData?.["users"])
-      ? jsonData["users"].map(user => new User(user.id, user.name, user.vote, user.push_vote))
-      : [];
-
-    const tracksData = all_tracks.map(track => new Track(track.id, track.name, track.artist, track.adder, track.url));
-
-    const combineJson = { "users": usersData, "tracks": tracksData };
-
-    await writeJSON(DBFilePath, combineJson);
-    console.log('Les données ont été écrites avec succès dans le fichier JSON.');
   } catch (error) {
-    console.error('Une erreur s\'est produite lors de la sauvegarde des pistes dans le fichier JSON :', error);
+    console.error('Une erreur s\'est produite lors de la sauvegarde des pistes dans la base de données :', error);
   }
 }
 
