@@ -288,16 +288,16 @@
     <div class="beatiful-card">
         <div class="holderPart">
             <h3 class="title"><span id="trackename-placeholder"></span></h3>
-            <h4 class="subtitle">par <span id="trackartist-placeholder"></span></h4>
+            <h4 class="subtitle">par&nbsp<span id="trackartist-placeholder"></span></h4>
             <p class="adder">Ajoutée par <span id="trackadder-placeholder"></span></p>
             <p class="link"><a class="url" id="trackurl" target="_blank" href="">Ecouter ▶️</a></p>
-            <div id="YesVote" onclick="location.href='/vote?vote=yes';">
+            <div id="YesVote" onclick="location.href='/vote?vote=1';">
                 <p class="yesno">Oui</p>
                 <i class="zmdi zmdi-favorite">
                     <p class="icon">👍</p>
                 </i>
             </div>
-            <div id="NoVote" onclick="location.href='/vote?vote=no';">
+            <div id="NoVote" onclick="location.href='/vote?vote=-1';">
                 <p class="yesno">Non</p>
                 <i class="zmdi zmdi-favorite">
                     <p class="icon">👎</p>
@@ -351,6 +351,8 @@
         if (trackURL) {
             trackURL.href = data.track.url;
         }
+
+        refreshBtnColor(data.vote);
     }
 
     // Function to fetch poll data from the server
@@ -368,14 +370,14 @@
     var btnYes = document.getElementById("YesVote");
     var btnNo = document.getElementById("NoVote");
 
-    function refreshBtnColor() {
-        /*if (btnYes != null && btnNo != null) {
-          if (${current_user.vote} === 1) {
+    function refreshBtnColor(vote) {
+        if (btnYes != null && btnNo != null) {
+          if (vote === 1) {
             btnYes.style.backgroundColor = "#03903e";
-          } else if (${current_user.vote} === -1) {
+          } else if (vote === -1) {
             btnNo.style.backgroundColor = "#03903e";
           }
-        }*/
+        }
     }
 
     btnYes.addEventListener("click", refreshBtnColor);
@@ -383,8 +385,6 @@
 
     fetchPollData();
 
-    // Appeler refreshBtnColor une fois au chargement de la page pour définir la couleur des boutons de vote
-    refreshBtnColor();
 </script>
 
 </html>

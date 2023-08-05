@@ -320,23 +320,34 @@ app.get("/getPollData", async (req, res) => {
     if (req.cookies.spotiPollToken === undefined) {
         return res.redirect('/');
     } else {
+      const current_user = await database.getUser(req.cookies.spotiPollToken);
+      if (current_user.length > 0) {
+        const current_user_id = current_user[0].id;
         let trackList = await database.getTrackList();
         if (trackList.length > 0) {
             const maxValue = trackList.length - 1;
             const randomNumber = generateRandomNumber(maxValue);
             const track = trackList[randomNumber];
+            const track_id = track.id;
+            
+            const current_user_vote = await database.getTodayUserVote(current_user_id);
+            let vote = 0;
+            if (current_user_vote.length === 0) {
+              vote = 0;
+            } else {
+              vote = current_user_vote[0].vote_answer;
+            }
 
-            const current_user = await database.getUser(req.cookies.spotiPollToken);
-
-            const voteText = current_user.vote === 0 ? "Tu n'as pas encore voté" : "Tu as voté, mais tu peux modifier ton vote";
-
+            const voteText = current_user_vote.length === 0 ? "Tu n'as pas encore voté" : "Tu as voté, mais tu peux modifier ton vote";
+            
             const response = {
-                "track": track, "vote": current_user.vote, "voteText": voteText
+              "track": track, "vote": vote, "voteText": voteText
             };
-            res.send(response);
-        } else {
-            res.redirect("/");
+            
+            return res.send(response);
+          }
         }
+      res.redirect("/");
     }
 });
 
@@ -367,14 +378,20 @@ app.get("/vote", async (req, res) => {
     } else {
         log("VOTE", req.cookies.username + " a voté " + req.query.vote)
         const current_user = await database.getUser(req.cookies.spotiPollToken);
-
-        if (req.query.vote === "yes") {
-            // current_user.vote = 1;
-        } else if (req.query.vote === "no") {
-            // current_user.vote = -1;
+        if (current_user.length > 0) {
+          const current_user_id = current_user[0].id;
+          let trackList = await database.getTrackList();
+          if (trackList.length > 0) {
+              const maxValue = trackList.length - 1;
+              const randomNumber = generateRandomNumber(maxValue);
+              const track = trackList[randomNumber];
+              const track_id = track.id;
+              const vote = parseInt(req.query.vote);
+              await database.addVote(vote, current_user_id, track_id);
+            return res.redirect("/poll");
+          }
         }
-
-        return res.redirect("/poll");
+        return res.redirect("/");
     }
 });
 
@@ -417,16 +434,35 @@ function log(type, message) {
 
 app.get("/result", async (req, res) => {
     let votesList = await database.getTodayVotesList();
-
-    let groupedVotes = votesList.reduce((accumulator, vote) => {
-        if (!accumulator[vote.track_id]) {
-            accumulator[vote.track_id] = 0;
+    let votingUser = []
+    votesList.forEach(vote => {
+        if (!votingUser.includes(vote.user_id)) {
+            votingUser.push(vote.user_id)
         }
-        accumulator[vote.track_id] += vote.vote_answer;
-        return accumulator;
-    }, {});
+    });
 
-    res.send(groupedVotes);
+    let lastForEachUser = [];
+     votingUser.forEach(async user => {
+      let vote = await database.getTodayUserVote(user);
+      if (vote.length > 0) {
+        lastForEachUser.push(vote[0].vote_answer);
+      } else {
+        lastForEachUser.push(0);
+      }
+    });
+
+    console.log(lastForEachUser);
+
+
+    // let groupedVotes = votesList.reduce((accumulator, vote) => {
+    //     if (!accumulator[vote.user_id]) {
+    //         accumulator[vote.user_id] = 0;
+    //     }
+    //     accumulator[vote.user_id] += vote.vote_answer;
+    //     return accumulator;
+    // }, {});
+
+    res.send("cc");
 });
 
 
