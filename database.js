@@ -58,6 +58,8 @@ export default class Database {
             const data = {
                 "id_user": userId, "username": userName
             };
+
+            return await this.pb.collection('User').create(data);
         }
         catch (error) {
             if (error.status !== 400) {
@@ -66,15 +68,13 @@ export default class Database {
         }
     }
 
-  // async getUser(userId) {
-  //   await this._checkAuthentication();
-  //   return await this.pb.collection('User').getFullList({
-  //     sort: '-created',
-  //     filter: {
-  //       id_user: userId
-  //     }
-  //   });
-  // }
+  async getUser(userId) {
+    await this._checkAuthentication();
+    return await this.pb.collection('User').getFullList({
+      sort: '-created',
+      filter: 'id_user="'+ userId +'"',
+    });
+  }
 
     async getUsersList() {
         await this._checkAuthentication();

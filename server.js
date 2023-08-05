@@ -201,8 +201,7 @@ app.get("/account", async (req, res) => {
 
 async function checkUserExist(userId, accessToken, res) {
   try {
-    const allUsers = await database.getUsersList();
-    if (allUsers.filter((user) => user.id !== userId).length == 0) {
+    if (await database.getUser(userId) === undefined || (await database.getUser(userId)).length === 0) {
       await addUser(userId);
     }
     res.cookie("username", nameDict[userId], {
@@ -328,6 +327,7 @@ app.get("/getPollData", async (req, res) => {
             const track = trackList[randomNumber];
 
             const current_user = await database.getUser(req.cookies.spotiPollToken);
+            // console.log(current_user);
 
             const voteText = current_user.vote === 0 ? "Tu n'as pas encore voté" : "Tu as voté, mais tu peux modifier ton vote";
 
