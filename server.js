@@ -120,19 +120,20 @@ app.get("/getTrackList", async (req, res) => {
 });
 
 async function saveTrackList(all_tracks) {
-    try {
-        // Pour chaque piste, on vérifie si elle existe déjà dans la base de données
-        let dbTrackList = await database.getTrackList();
-        for (const track of all_tracks) {
-            const trackExists = dbTrackList.some(dbTrack => dbTrack.id === track.id);
-            if (!trackExists) {
-                // Si elle n'existe pas, on l'ajoute à la base de données
-                await database.addTrack(track);
-            }
-        }
-    } catch (error) {
-        console.error('Une erreur s\'est produite lors de la sauvegarde des pistes dans la base de données :', error);
-    }
+  try {
+      // Pour chaque piste, on vérifie si elle existe déjà dans la base de données
+      let dbTrackList = await database.getTrackList();
+      for (const track of all_tracks) {
+          const trackExists = dbTrackList.some(dbTrack => dbTrack.id === track.id);
+          if (!trackExists) {
+              // Si elle n'existe pas, on l'ajoute à la base de données
+              await database.addTrack(track);
+          }
+      }
+  } catch (error) {
+    console.error('Une erreur s\'est produite lors de la sauvegarde des pistes dans la base de données :', error);
+    throw error;
+  }
 }
 
 function generateTrackRow(item) {
@@ -199,21 +200,24 @@ app.get("/account", async (req, res) => {
 });
 
 async function checkUserExist(userId, accessToken, res) {
-    try {
-        const allUsers = await database.getUsersList();
-        if (allUsers.filter((user) => user.id !== userId)) {
-            await addUser(userId);
-        }
-        res.cookie("username", nameDict[userId], {
-            expires: new Date(Date.now() + 1800000), httpOnly: true
-        }); //cookie expire in 30 minutes
-        res.cookie("spotiPollToken", userId, {
-            expires: new Date(Date.now() + 1800000), httpOnly: true
-        }); //cookie expire in 30 minutes
-        res.cookie("spotifAccessToken", accessToken, {
-            expires: new Date(Date.now() + 1800000), httpOnly: true
-        }); //cookie expire in 30 minutes
-        return true;
+  try {
+    const allUsers = await database.getUsersList();
+    if (allUsers.filter((user) => user.id !== userId)) {
+      await addUser(userId);
+    }
+    res.cookie("username", nameDict[userId], {
+      expires: new Date(Date.now() + 1800000),
+      httpOnly: true
+    }); //cookie expire in 30 minutes
+    res.cookie("spotiPollToken", userId, {
+      expires: new Date(Date.now() + 1800000),
+      httpOnly: true
+    }); //cookie expire in 30 minutes
+    res.cookie("spotifAccessToken", accessToken, {
+      expires: new Date(Date.now() + 1800000),
+      httpOnly: true
+    }); //cookie expire in 30 minutes
+    return true;
 
     } catch (error) {
         console.error('Une erreur s\'est produite lors de la vérification de l\'existence de l\'utilisateur :', error);
@@ -279,13 +283,13 @@ async function getPlaylistTracks(accessToken, playlist_id) {
         headers: {
             Authorization: "Bearer " + accessToken,
         },
-    });
+      }
+    );
 
     if (response.data.error) {
-        console.error("Une erreur s'est produite lors de la récupération des pistes de la playlist:",);
-        throw response.data.error;
-    }
-
+      console.error("Une erreur s'est produite lors de la récupération des pistes de la playlist:",);
+      throw response.data.error;
+  }
     return response.data.items.map(item => {
         const track = item.track;
         const added_by_id = item.added_by.id;
@@ -322,6 +326,8 @@ app.get("/getPollData", async (req, res) => {
             const maxValue = trackList.length - 1;
             const randomNumber = generateRandomNumber(maxValue);
             const track = trackList[randomNumber];
+
+            const current_user = await database.getUser(req.cookies.spotiPollToken);
 
             const voteText = current_user.vote === 0 ? "Tu n'as pas encore voté" : "Tu as voté, mais tu peux modifier ton vote";
 
