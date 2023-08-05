@@ -98,4 +98,21 @@ export default class Database {
             sort: '-created',
         });
     }
+
+    async log(type, message) {
+        try {
+            await this._checkAuthentication();
+
+            const data = {
+                "type": type, "message": message
+            };
+
+            return await this.pb.collection('Log').create(data);
+
+        } catch (error) {
+            if (error.status !== 400) {
+                console.error('An error occurred while adding the vote:', error);
+            }
+        }
+    }
 }

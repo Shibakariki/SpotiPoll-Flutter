@@ -106,7 +106,7 @@ app.get("/getTrackList", async (req, res) => {
         if (req.cookies.spotiPollToken === undefined) {
             return res.redirect('/');
         } else {
-            log(req, res, "a visité la page /track_list");
+            log("VISIT", req.cookies.username + " a visité la page /track_list");
 
             let communHTML = ``;
             const allTrack = await database.getTrackList();
@@ -188,7 +188,7 @@ app.get("/account", async (req, res) => {
 
             await saveTrackList(playlistTracks);
 
-            logConnect(res.cookie.username);
+            log("CONNECT", req.cookies.username + " s'est connecté")
             return res.redirect('/track_list');
         }
         return res.redirect('/');
@@ -309,7 +309,7 @@ app.get("/poll", (req, res) => {
         res.sendFile(path.join(__dirname, "views/poll.html"));
     }
 
-    log(req, res, "a visité la page /poll");
+    log("VISIT", req.cookies.username + " a visité la page /poll")
 
 });
 
@@ -360,7 +360,7 @@ app.get("/vote", (req, res) => {
     if (req.cookies.spotiPollToken === undefined) {
         return res.redirect('/');
     } else {
-        log(req, res, "a voté : " + req.query.vote);
+        log("VOTE", req.cookies.username + " a voté " + req.query.vote)
 
         if (req.query.vote === "yes") {
             current_user.vote = 1;
@@ -406,33 +406,9 @@ async function deleteTrack(res, playlist_id, track_id) {
 
 // #region Log and Tests
 
-function getCurrentDateTime() {
-    const date = new Date();
-    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} à ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-}
-
-// TODO : à remplacer par des logs en BDD
-function log(info) {
-    const logEntry = `${getCurrentDateTime()} => ${info}\n`;
-    fs.appendFile('./views/static/log.txt', logEntry, function (err) {
-        if (err) throw err;
-    });
-}
-
-// TODO : à remplacer par des logs en BDD
-function logConnect(username) {
-    const logEntry = `${getCurrentDateTime()} => ${username} s'est connecté avec succès\n`;
-    fs.appendFile('./views/static/log.txt', logEntry, function (err) {
-        if (err) throw err;
-    });
-}
-
-// TODO : à remplacer par des logs en BDD
-function logReadBot(info) {
-    const logEntry = `${getCurrentDateTime()} => Il y a eu ${info[0]} vote(s) pour la suppression de ${info[1]} par ${info[2]}\n`;
-    fs.writeFile('./views/static/readResult.txt', logEntry, function (err) {
-        if (err) throw err;
-    });
+function log(type, message) {
+    database.log(type, message).then(() => {
+    })
 }
 
 app.get("/result", (req, res) => {
@@ -449,15 +425,6 @@ app.get("/result", (req, res) => {
         res.send("Aucun résultat");
     }
 });
-
-// TODO : à remplacer par des logs en BDD
-function logActionBot(info) {
-    const date = new Date();
-    const time = date.getDate().toString() + "/" + (date.getMonth() + 1).toString() + "/" + date.getFullYear().toString() + " à " + date.getHours().toString() + ":" + date.getMinutes().toString() + ":" + date.getSeconds().toString() + " => ";
-    fs.appendFile('./views/static/log.txt', time + " " + info + "\n", function (err) {
-        if (err) throw err;
-    });
-}
 
 app.post("/test", (req, res) => {
     console.log("test");
