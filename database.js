@@ -77,4 +77,41 @@ export default class Database {
     });
     return records;
   }
+
+  async deleteUser(userId) {
+    await this._checkAuthentication();
+    const deletedRecord = await this.pb.collection('User').delete(userId);
+    return deletedRecord;
+  }
+
+  async addVote(vote, trackId, userId) {
+    try {
+      await this._checkAuthentication();
+
+        const data = {
+          "vote_answer": vote,
+          "user_id": userId,
+          "track_id": trackId
+        };
+
+        const addedVote = await this.pb.collection('Vote').create(data);
+
+        return addedVote;
+      
+    } catch (error) {
+      if (error.status !== 400) {
+        console.error('An error occurred while adding the vote:', error);
+      }
+    }
+  }
+
+  async getVotesList() {
+    await this._checkAuthentication();
+    const records = await this.pb.collection('Vote').getFullList({
+        sort: '-created',
+    });
+    return records;
+  }
+
+
 }
