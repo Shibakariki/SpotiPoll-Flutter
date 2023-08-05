@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import {config as configDotenv} from "dotenv";
 
 import Database from './database.js';
-import {promises as fs} from "fs";
+
 import path, {dirname} from "path";
 import {fileURLToPath} from 'url';
 
@@ -415,20 +415,20 @@ function log(type, message) {
     })
 }
 
-app.get("/result", (req, res) => {
-    const resultFilePath = './views/static/readResult.txt';
+app.get("/result", async (req, res) => {
+    let votesList = await database.getTodayVotesList();
 
-    if (fs.existsSync(resultFilePath)) {
-        fs.readFile(resultFilePath, 'utf8')
-            .then(data => res.send(data))
-            .catch(err => {
-                console.error(err);
-                res.send("Une erreur s'est produite lors de la lecture du fichier de résultats.");
-            });
-    } else {
-        res.send("Aucun résultat");
-    }
+    let groupedVotes = votesList.reduce((accumulator, vote) => {
+        if (!accumulator[vote.track_id]) {
+            accumulator[vote.track_id] = 0;
+        }
+        accumulator[vote.track_id] += vote.vote_answer;
+        return accumulator;
+    }, {});
+
+    res.send(groupedVotes);
 });
+
 
 app.post("/test", (req, res) => {
     console.log("test");
