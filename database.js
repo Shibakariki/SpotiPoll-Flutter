@@ -21,6 +21,12 @@ export default class Database {
     return records;
   }
 
+  async getTrack(trackId) {
+    await this._checkAuthentication();
+    const record = await this.pb.collection('Track').get(trackId);
+    return record;
+  }
+
   async addTrack(track) {
     try {
       await this._checkAuthentication();
@@ -58,7 +64,7 @@ export default class Database {
           "id_user": userId,
           "username": userName
         };
-
+        
         const addedUser = await this.pb.collection('User').create(data);
 
         return addedUser;
@@ -68,6 +74,17 @@ export default class Database {
         console.error('An error occurred while adding the user:', error);
       }
     }
+  }
+
+  async getUser(userId) {
+    await this._checkAuthentication();
+    const record = await this.pb.collection('User').getFullList({
+        sort: '-created',
+        filter: {
+          id_user: userId
+        }
+    });
+    return record;
   }
 
   async getUsersList() {

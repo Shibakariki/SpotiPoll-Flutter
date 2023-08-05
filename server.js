@@ -139,7 +139,7 @@ app.get("/getTrackList", async (req, res) => {
       log(req, res, "a visité la page /track_list");
 
       let communHTML = ``;
-      const allTrack = await database.getAllTracks();
+      const allTrack = await database.getTrackList();
       return showAllTrack(res, allTrack, communHTML); //gère le 0 tracks et return un html
     }
   } catch (error) {
@@ -154,8 +154,10 @@ async function saveTrackList(all_tracks) {
     for (var track of all_tracks) {
       return await database.addTrack(track);
     }
+    return true;
   } catch (error) {
     console.error('Une erreur s\'est produite lors de la sauvegarde des pistes dans la base de données :', error);
+    throw error;
   }
 }
 
@@ -225,8 +227,8 @@ app.get("/account", async (req, res) => {
 async function checkUserExist(userId, accessToken, res) {
   try {
     const allUsers = await database.getUsersList();
-    if (allUsers.find((user) => user.id !== userId)) {
-      addUser(userId);
+    if (allUsers.filter((user) => user.id !== userId)) {
+      await addUser(userId);
     }
     res.cookie("username", nameDict[userId], {
       expires: new Date(Date.now() + 1800000),
@@ -296,7 +298,8 @@ async function getUserId(res, accessToken) {
 
 async function addUser(userId) {
   try {
-    return await database.addUser(userId, nameDict[userId]);
+    await database.addUser(userId, nameDict[userId]);
+    return true;
   } catch (error) {
     console.error('Une erreur s\'est produite lors de l\'ajout de l\'utilisateur :', error);
     throw error;
@@ -337,7 +340,7 @@ async function getPlaylistTracks(accessToken, playlist_id) {
     if (response.data.error) {
       throw new Error("Error: " + response.data.error);
     }
-    
+
     const all_tracks = response.data.items.map(item => {
       const track = item.track;
       const added_by_id = item.added_by.id;
@@ -372,14 +375,18 @@ app.get("/poll", (req, res) => {
 
 });
 
-app.get("/getPollData", (req, res) => {
+app.get("/getPollData", async (req, res) => {
   if (req.cookies.spotiPollToken === undefined) {
     return res.redirect('/');
   } else {
+    const allTrack = await database.getTrackList();
     if (allTrack.length > 0) {
       const maxValue = allTrack.length - 1;
       const randomNumber = generateRandomNumber(maxValue);
       const track = allTrack[randomNumber];
+
+      const current_user = await database.getUser(req.cookies.spotiPollToken);
+      console.log(current_user);
 
       const voteText = current_user.vote === 0 ? "Tu n'as pas encore voté" : "Tu as voté, mais tu peux modifier ton vote";
 
