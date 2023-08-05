@@ -202,7 +202,7 @@ app.get("/account", async (req, res) => {
 async function checkUserExist(userId, accessToken, res) {
   try {
     const allUsers = await database.getUsersList();
-    if (allUsers.filter((user) => user.id !== userId)) {
+    if (allUsers.filter((user) => user.id !== userId).length == 0) {
       await addUser(userId);
     }
     res.cookie("username", nameDict[userId], {

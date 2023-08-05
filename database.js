@@ -81,6 +81,16 @@ export default class Database {
     return await this.pb.collection('User').delete(userId);
   }
 
+  // async getUser(userId) {
+  //   await this._checkAuthentication();
+  //   return await this.pb.collection('User').getFullList({
+  //     sort: '-created',
+  //     filter: {
+  //       id_user: userId
+  //     }
+  //   });
+  // }
+
   async addVote(vote, trackId, userId) {
     try {
       await this._checkAuthentication();
