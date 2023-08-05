@@ -206,15 +206,15 @@ async function checkUserExist(userId, accessToken, res) {
     }
     res.cookie("username", nameDict[userId], {
       expires: new Date(Date.now() + 1800000),
-      httpOnly: true
+      httpOnly: false
     }); //cookie expire in 30 minutes
     res.cookie("spotiPollToken", userId, {
       expires: new Date(Date.now() + 1800000),
-      httpOnly: true
+      httpOnly: false
     }); //cookie expire in 30 minutes
     res.cookie("spotifAccessToken", accessToken, {
       expires: new Date(Date.now() + 1800000),
-      httpOnly: true
+      httpOnly: false
     }); //cookie expire in 30 minutes
     return true;
 
@@ -327,7 +327,6 @@ app.get("/getPollData", async (req, res) => {
             const track = trackList[randomNumber];
 
             const current_user = await database.getUser(req.cookies.spotiPollToken);
-            // console.log(current_user);
 
             const voteText = current_user.vote === 0 ? "Tu n'as pas encore voté" : "Tu as voté, mais tu peux modifier ton vote";
 
@@ -362,19 +361,18 @@ function generateRandomNumber(maxValue) {
     return Math.round((randomNumber / (Math.pow(2, 256) - 1)) * maxValue);
 }
 
-app.get("/vote", (req, res) => {
+app.get("/vote", async (req, res) => {
     if (req.cookies.spotiPollToken === undefined) {
         return res.redirect('/');
     } else {
         log("VOTE", req.cookies.username + " a voté " + req.query.vote)
+        const current_user = await database.getUser(req.cookies.spotiPollToken);
 
         if (req.query.vote === "yes") {
-            current_user.vote = 1;
+            // current_user.vote = 1;
         } else if (req.query.vote === "no") {
-            current_user.vote = -1;
+            // current_user.vote = -1;
         }
-
-        modifyUser(current_user);
 
         return res.redirect("/poll");
     }
