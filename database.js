@@ -119,6 +119,22 @@ export default class Database {
         }, 'An error occurred while retrieving today\'s votes list:');
     }
 
+    async getTodayUserVote(userId) {
+        await this._checkAuthentication();
+        const today = new Date().toISOString().slice(0, 10)
+        const beginTime = today + " 00:00:00.000"
+        const stopTime = today + " 23:59:59.999"
+
+        // Récupère les votes de la journée du user avec comme id : userId
+        // return await this.pb.collection('Vote').getFirstListItem(`created >= "${beginTime}" && created <= "${stopTime}" && user_id="${userId}"`,{
+        //     sort: '-created',
+        // });
+        return await this.pb.collection('Vote').getFullList({
+            sort: '-created', filter: `created >= "${beginTime}" && created <= "${stopTime}" && user_id="${userId}"`,
+        });
+
+    }
+
     async log(type, message) {
         return await handleError(async () => {
             await this._checkAuthentication();
