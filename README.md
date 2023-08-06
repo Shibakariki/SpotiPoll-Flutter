@@ -83,7 +83,7 @@ touch .env
    PB_USERNAME=""
    PB_PASSWORD=""
    ```
-## Comment l'utiliser
+## Utilisation
 
 1. Vérifiez que le serveur PocketBase est en cours d'exécution :
 ```bash
