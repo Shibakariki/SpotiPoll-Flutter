@@ -67,7 +67,8 @@ export default class Database {
     async getUser(userId) {
         await this._checkAuthentication();
         return await this.pb.collection('User').getFullList({
-            sort: '-created', filter: 'id_user="' + userId + '"',
+            sort: '-created',
+            filter: `id_user="${userId}"`,
         });
     }
 
@@ -80,7 +81,11 @@ export default class Database {
 
     async deleteUser(userId) {
         await this._checkAuthentication();
-        return await this.pb.collection('User').delete(userId);
+        let id = await this.getUser(userId);
+        for (let i = 0; i < id.length; i++) {
+            console.log(id[i].id);
+            await this.pb.collection('User').delete(id[i].id);
+        }
     }
 
     async addVote(vote, userId, trackId) {
