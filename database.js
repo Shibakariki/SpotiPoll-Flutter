@@ -41,7 +41,11 @@ export default class Database {
 
     async deleteTrack(trackId) {
         await this._checkAuthentication();
-        return await this.pb.collection('Track').delete(trackId);
+        let ids = await this.getTrack(trackId);
+        for (let i = 0; i < ids.length; i++) {
+            console.log(ids[i].id);
+            await this.pb.collection('Track').delete(ids[i].id);
+        }
     }
 
     async addUser(userId, userName) {
