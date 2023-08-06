@@ -113,18 +113,21 @@ async function saveTrackList(all_tracks) {
   try {
       // Pour chaque piste, on vérifie si elle existe déjà dans la base de données
       let dbTrackList = await database.getTrackList();
-      for (const track of all_tracks) {
-          const trackExists = dbTrackList.some(dbTrack => dbTrack.id === track.id);
-          if (!trackExists) {
-              // Si elle n'existe pas, on l'ajoute à la base de données
-              await database.addTrack(track);
-          }
+
+      // Filtrer les pistes qui n'existent pas encore dans la base de données
+      let newTracks = all_tracks.filter(
+          track => !dbTrackList.some(dbTrack => dbTrack.id_track === track.id_track)
+      );
+
+      for (const track of newTracks) {
+          await database.addTrack(track);
       }
   } catch (error) {
     console.error('Une erreur s\'est produite lors de la sauvegarde des pistes dans la base de données :', error);
     throw error;
   }
 }
+
 
 function generateTrackRow(item) {
     return `<tr>
