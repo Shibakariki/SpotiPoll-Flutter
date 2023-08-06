@@ -292,12 +292,14 @@ async function getPlaylistTracks(accessToken, playlist_id) {
     return response.data.items.map(item => {
         const track = item.track;
         const added_by_id = item.added_by.id;
-        const track_id = track.id;
-        const track_name = track.name;
-        const track_artist = track.artists[0].name;
-        const track_adder = nameDict[added_by_id];
-        const track_url = track.external_urls.spotify;
-        return new Track(track_id, track_name, track_artist, track_adder, track_url);
+
+        return {
+            "id_track": track.id,
+            "name": track.name,
+            "artist": track.artists[0].name,
+            "adder": nameDict[added_by_id],
+            "url": track.external_urls.spotify,
+        };
     });
 }
 

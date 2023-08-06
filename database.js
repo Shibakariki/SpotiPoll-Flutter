@@ -30,16 +30,7 @@ export default class Database {
     async addTrack(track) {
         try {
             await this._checkAuthentication();
-
-            const data = {
-                "id_track": track.id,
-                "name": track.name,
-                "artist": track.artist,
-                "adder": track.adder,
-                "url": track.url,
-            };
-
-            return await this.pb.collection('Track').create(data);
+            return await this.pb.collection('Track').create(track);
 
         } catch (error) {
             if (error.status !== 400) {
