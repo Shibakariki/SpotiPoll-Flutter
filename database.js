@@ -1,5 +1,16 @@
 import PocketBase from "pocketbase/cjs";
 
+
+const handleError = async (action, errorMessage) => {
+    try {
+        await action();
+    } catch (error) {
+        if (error.status !== 400) {
+            console.error(errorMessage, error);
+        }
+    }
+};
+
 export default class Database {
     constructor() {
         this.pb = new PocketBase('http://127.0.0.1:8090');
@@ -14,123 +25,105 @@ export default class Database {
     }
 
     async getTrackList() {
-        await this._checkAuthentication();
-        return await this.pb.collection('Track').getFullList({
-            sort: '-created',
-        });
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            return await this.pb.collection('Track').getFullList({sort: '-created'});
+        }, 'An error occurred while retrieving the track list:');
     }
 
     async getTrack(trackId) {
-        await this._checkAuthentication();
-        return await this.pb.collection('Track').getFullList({
-            sort: '-created', filter: `id_track="${trackId}"`,
-        });
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            return await this.pb.collection('Track').getFullList({
+                sort: '-created', filter: `id_track="${trackId}"`,
+            });
+        }, 'An error occurred while retrieving the track:');
     }
 
     async addTrack(track) {
-        try {
+        return await handleError(async () => {
             await this._checkAuthentication();
             return await this.pb.collection('Track').create(track);
-
-        } catch (error) {
-            if (error.status !== 400) {
-                console.error('An error occurred while adding the track:', error);
-            }
-        }
+        }, 'An error occurred while adding the track:');
     }
 
     async deleteTrack(trackId) {
-        await this._checkAuthentication();
-        let ids = await this.getTrack(trackId);
-        for (let i = 0; i < ids.length; i++) {
-            console.log(ids[i].id);
-            await this.pb.collection('Track').delete(ids[i].id);
-        }
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            const ids = await this.getTrack(trackId);
+            for (const track of ids) {
+                console.log(track.id);
+                await this.pb.collection('Track').delete(track.id);
+            }
+        }, 'An error occurred while deleting the track:');
     }
 
     async addUser(userId, userName) {
-        try {
+        return await handleError(async () => {
             await this._checkAuthentication();
-
             const data = {
                 "id_user": userId, "username": userName
             };
-
             return await this.pb.collection('User').create(data);
-        } catch (error) {
-            if (error.status !== 400) {
-                console.error('An error occurred while adding the user:', error);
-            }
-        }
+        }, 'An error occurred while adding the user:');
     }
 
     async getUser(userId) {
-        await this._checkAuthentication();
-        return await this.pb.collection('User').getFullList({
-            sort: '-created',
-            filter: `id_user="${userId}"`,
-        });
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            return await this.pb.collection('User').getFullList({
+                sort: '-created', filter: `id_user="${userId}"`,
+            });
+        }, 'An error occurred while retrieving the user:');
     }
 
     async getUsersList() {
-        await this._checkAuthentication();
-        return await this.pb.collection('User').getFullList({
-            sort: '-created',
-        });
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            return await this.pb.collection('User').getFullList({
+                sort: '-created',
+            });
+        }, 'An error occurred while retrieving the users list:');
     }
 
     async deleteUser(userId) {
-        await this._checkAuthentication();
-        let id = await this.getUser(userId);
-        for (let i = 0; i < id.length; i++) {
-            console.log(id[i].id);
-            await this.pb.collection('User').delete(id[i].id);
-        }
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            const ids = await this.getUser(userId);
+            for (const user of ids) {
+                console.log(user.id);
+                await this.pb.collection('User').delete(user.id);
+            }
+        }, 'An error occurred while deleting the user:');
     }
 
     async addVote(vote, userId, trackId) {
-        try {
+        return await handleError(async () => {
             await this._checkAuthentication();
-
             const data = {
                 "vote_answer": vote, "user_id": userId, "track_id": trackId,
             };
-
             return await this.pb.collection('Vote').create(data);
-
-        } catch (error) {
-            if (error.status !== 400) {
-                console.error('An error occurred while adding the vote:', error);
-            }
-        }
+        }, 'An error occurred while adding the vote:');
     }
 
     async getTodayVotesList() {
-        await this._checkAuthentication();
-        const today = new Date().toISOString().slice(0, 10)
-        const beginTime = today + " 00:00:00.000"
-        const stopTime = today + " 23:59:59.999"
-
-        // Récupère les votes de la journée
-        return await this.pb.collection('Vote').getFullList({
-            filter: `created >= "${beginTime}" && created <= "${stopTime}"`,
-        });
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            const {beginTime, stopTime} = this._todayRange();
+            return await this.pb.collection('Vote').getFullList({
+                filter: `created >= "${beginTime}" && created <= "${stopTime}"`,
+            });
+        }, 'An error occurred while retrieving today\'s votes list:');
     }
 
     async log(type, message) {
-        try {
+        return await handleError(async () => {
             await this._checkAuthentication();
-
             const data = {
                 "type": type, "message": message
             };
-
             return await this.pb.collection('Log').create(data);
-
-        } catch (error) {
-            if (error.status !== 400) {
-                console.error('An error occurred while adding the vote:', error);
-            }
-        }
+        }, 'An error occurred while logging the message:');
     }
 }
