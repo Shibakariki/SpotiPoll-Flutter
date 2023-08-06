@@ -61,16 +61,6 @@ const scope = `user-modify-playback-state
 
 const database = new Database();
 
-class Track {
-    constructor(id, name, artist, adder, url) {
-        this.id = id;
-        this.name = name;
-        this.artist = artist;
-        this.adder = adder;
-        this.url = url;
-    }
-}
-
 app.listen(1443, () => {
     console.log("App is listening on port 1443! localhost:1443\n");
 });
@@ -330,10 +320,9 @@ app.get("/getPollData", async (req, res) => {
             const maxValue = trackList.length - 1;
             const randomNumber = generateRandomNumber(maxValue);
             const track = trackList[randomNumber];
-            const track_id = track.id;
             
             const current_user_vote = await database.getTodayUserVote(current_user_id);
-            let vote = 0;
+            let vote;
             if (current_user_vote.length === 0) {
               vote = 0;
             } else {
