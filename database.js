@@ -3,13 +3,15 @@ import PocketBase from "pocketbase/cjs";
 
 const handleError = async (action, errorMessage) => {
     try {
-        await action();
+        return await action();
     } catch (error) {
         if (error.status !== 400) {
             console.error(errorMessage, error);
         }
+        throw error; // Propager l'erreur pour que vous puissiez la gérer à l'extérieur de handleError si nécessaire.
     }
 };
+
 
 export default class Database {
     constructor() {
