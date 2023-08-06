@@ -428,35 +428,31 @@ function log(type, message) {
 
 app.get("/result", async (req, res) => {
     let votesList = await database.getTodayVotesList();
-    let votingUser = []
+
+    // Un dictionnaire pour stocker le dernier vote de chaque utilisateur pour chaque morceau
+    let lastVoteForUserPerTrack = {};
+
+    // Triez la liste des votes en fonction de leur date de création
+    votesList.sort((a, b) => new Date(b.created) - new Date(a.created));
+
+    // Parcourez chaque vote et stockez le dernier vote de chaque utilisateur pour chaque morceau
     votesList.forEach(vote => {
-        if (!votingUser.includes(vote.user_id)) {
-            votingUser.push(vote.user_id)
+        if (!lastVoteForUserPerTrack[vote.track_id]) {
+            lastVoteForUserPerTrack[vote.track_id] = {};
+        }
+
+        if (!lastVoteForUserPerTrack[vote.track_id][vote.user_id]) {
+            lastVoteForUserPerTrack[vote.track_id][vote.user_id] = vote.vote_answer;
         }
     });
 
-    let lastForEachUser = [];
-     votingUser.forEach(async user => {
-      let vote = await database.getTodayUserVote(user);
-      if (vote.length > 0) {
-        lastForEachUser.push(vote[0].vote_answer);
-      } else {
-        lastForEachUser.push(0);
-      }
-    });
+    // Calculez la somme des derniers votes pour chaque morceau
+    let sumOfLastVotesPerTrack = {};
+    for (let trackId in lastVoteForUserPerTrack) {
+        sumOfLastVotesPerTrack[trackId] = Object.values(lastVoteForUserPerTrack[trackId]).reduce((sum, vote) => sum + vote, 0);
+    }
 
-    console.log(lastForEachUser);
-
-
-    // let groupedVotes = votesList.reduce((accumulator, vote) => {
-    //     if (!accumulator[vote.user_id]) {
-    //         accumulator[vote.user_id] = 0;
-    //     }
-    //     accumulator[vote.user_id] += vote.vote_answer;
-    //     return accumulator;
-    // }, {});
-
-    res.send("cc");
+    res.send(JSON.stringify(sumOfLastVotesPerTrack))
 });
 
 
@@ -467,7 +463,7 @@ app.post("/test", (req, res) => {
 });
 
 app.get("/test", (req, res) => {
-
+    database.deleteUser("123");
     return res.redirect("/");
 });
 
