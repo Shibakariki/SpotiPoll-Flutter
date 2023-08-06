@@ -83,3 +83,20 @@ touch .env
    PB_USERNAME=""
    PB_PASSWORD=""
    ```
+## Comment l'utiliser
+
+1. Vérifiez que le serveur PocketBase est en cours d'exécution :
+```bash
+./pocketbase serve
+```
+
+2. Pour démarrer l'application :
+   - En mode production :
+   ```bash
+   npm start
+   ```
+
+   - En mode développement :
+   ```bash
+   npm run dev
+   ```
