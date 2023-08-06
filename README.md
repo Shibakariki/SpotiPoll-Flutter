@@ -12,6 +12,7 @@
 Blablabla trop cool ce projet
 
 ## Installation
+### SpotiPoll
 
 1. Cloner le dépôt depuis GitHub :
 
@@ -24,6 +25,17 @@ cd SpotiPoll
 
 ```bash
 npm install
+```
+
+### PocketBase
+3. Télécharger et lancer [PocketBase](https://pocketbase.io/docs/) :
+```bash
+./pocketbase serve
+```
+
+4. Après avoir crée un compte, importer le fichier **schema.json** dans PocketBase.
+```path
+Settings -> Import collections -> schema.json
 ```
 
 ## Configuration des variables d'environnement
@@ -66,7 +78,8 @@ touch .env
    REDIRECT_URL=""
    ```
 
-**BDD_FILEPATH** : C'est le chemin d'accès au fichier de base de données utilisé par l'application. Dans cet exemple, il s'agit d'un fichier JSON.
+**BDD_CREDENTIALS** : C'est le couple identifiant mdp d'un compte admin de votre base de données PocketBase.
    ```
-   BDD_FILEPATH=""
+   PB_USERNAME=""
+   PB_PASSWORD=""
    ```
