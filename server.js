@@ -123,37 +123,6 @@ async function saveTrackList(all_tracks) {
     }
 }
 
-function generateTrackRow(item) {
-    return `<tr>
-            <td>${item.name}</td>
-            <td>${item.artist}</td>
-            <td>${item.adder}</td>
-            <td><a class="url" target="_blank" href="${item.url}">Ecouter ▶️</a></td>
-          </tr>`;
-}
-
-function showAllTrack(res, allTrack, communHTML) {
-    if (allTrack.length > 0) {
-        const tableRows = allTrack.map(generateTrackRow).join('');
-        const tableHTML = `
-      <div>
-        <table>
-          <tr>
-            <th>Titre</th>
-            <th>Auteur</th>
-            <th>Ajoutée par</th>
-            <th>Ecouter</th>
-          </tr>
-          ${tableRows}
-        </table>
-      </div>`;
-
-        return res.send(communHTML + tableHTML);
-    } else {
-        return res.send(communHTML + "<h1>Aucun titre</h1>");
-    }
-}
-
 // #endregion
 
 // #region Connexion Spotify
