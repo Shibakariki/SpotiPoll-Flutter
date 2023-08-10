@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import {config as configDotenv} from "dotenv";
 
 import Database from './database.js';
+import Spotify from './spotify.js';
 
 import path, {dirname} from "path";
 import {fileURLToPath} from 'url';
@@ -44,12 +45,6 @@ function checkEnvVariables() {
 
 checkEnvVariables()
 
-const clientID = process.env.SPOTIFY_CLIENT_ID
-const clientSecret = process.env.SPOTIFY_CLIENT_SECRET
-
-const base64ClientID = Buffer.from(clientID + ":" + clientSecret).toString("base64")
-const redirectURI = process.env.REDIRECT_URL
-
 const scope = `user-modify-playback-state
     user-read-playback-state
     user-read-currently-playing
@@ -60,7 +55,7 @@ const scope = `user-modify-playback-state
     playlist-modify-public`;
 
 const database = new Database();
-
+const spotify = new Spotify(process.env.REDIRECT_URL, process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET)
 app.listen(1443, () => {
     console.log("App is listening on port 1443! localhost:1443\n");
 });
@@ -72,7 +67,11 @@ app.use("/static", express.static('./views/static/'));
 //this page contains the link to the spotify authorization page
 //contains custom url queries that pertain to my specific app
 app.get("/", async (req, res) => {
-    return res.sendFile(path.join(__dirname, "views/connect.html"));
+    if (spotify.isTokenSet()) {
+        return res.redirect('/track_list');
+    } else {
+        return res.sendFile(path.join(__dirname, "views/connect.html"));
+    }
 });
 
 // #region Gestion des Tracks
@@ -86,7 +85,7 @@ app.get("/track_list", async (req, res) => {
 });
 
 app.get('/refreshTrackList', (req, res) => {
-    const spotifyURL = "https://accounts.spotify.com/authorize?client_id=" + clientID + "&response_type=code&redirect_uri=" + redirectURI + "&scope=" + scope;
+    const spotifyURL = "https://accounts.spotify.com/authorize?client_id=" + process.env.SPOTIFY_CLIENT_ID + "&response_type=code&redirect_uri=" + process.env.REDIRECT_URL + "&scope=" + scope;
 
     return res.redirect(spotifyURL);
 });
@@ -170,22 +169,17 @@ app.get("/account", async (req, res) => {
             return res.redirect('/');
         }
 
-        const accessToken = await getAccessToken(req.query.code);
-        const userId = await getUserId(res, accessToken);
-        if (await checkUserExist(userId, accessToken, res)) {
-            // var playlistId = process.env.SPOTIFY_PLAYLIST_ID;
+        await spotify.getAccessToken(req.query.code)
+        const allPlaylists = await spotify.getAllPlaylist();
 
-            const allPlaylists = await getAllPlaylist(res, accessToken);
-            let playlistId = allPlaylists.data["items"].filter((item) => item.name === "WtfCanadianTapeN°001")[0]["id"];
+        let playlistId = allPlaylists.data["items"].filter((item) => item.name === process.env.SPOTIFY_PLAYLIST_ID)[0]["id"];
+        const playlistTracks = await spotify.getPlaylistTracks(playlistId);
 
-            const playlistTracks = await getPlaylistTracks(accessToken, playlistId);
+        await saveTrackList(playlistTracks);
 
-            await saveTrackList(playlistTracks);
+        await log("INIT", "Initialisation effectuée par " + req.cookies.username)
+        return res.redirect('/track_list');
 
-            log("CONNECT", req.cookies.username + " s'est connecté")
-            return res.redirect('/track_list');
-        }
-        return res.redirect('/');
     } catch (error) {
         console.error('Une erreur s\'est produite lors du traitement de la route "/account":', error);
         return res.redirect('/');
@@ -217,22 +211,6 @@ async function checkUserExist(userId, accessToken, res) {
     }
 }
 
-async function getAccessToken(code) {
-    const spotifyResponse = await axios.post("https://accounts.spotify.com/api/token", queryString.stringify({
-        grant_type: "authorization_code", code: code, redirect_uri: redirectURI,
-    }), {
-        headers: {
-            Authorization: "Basic " + base64ClientID, "Content-Type": "application/x-www-form-urlencoded",
-        },
-    });
-
-    if (spotifyResponse.data.error) {
-        console.error("Une erreur s'est produite lors de la récupération de l'access token:", spotifyResponse.data.error);
-        throw spotifyResponse.data.error;
-    }
-    return spotifyResponse.data.access_token;
-}
-
 async function getUserId(res, accessToken) {
     const response = await axios.get("https://api.spotify.com/v1/me", {
         headers: {
@@ -257,44 +235,7 @@ async function addUser(userId) {
     }
 }
 
-async function getAllPlaylist(res, accessToken) {
-    const all_playlists = await axios.get("https://api.spotify.com/v1/me/playlists", {
-        headers: {
-            Authorization: "Bearer " + accessToken,
-        },
-    });
 
-    if (all_playlists.data.error) {
-        console.error("Une erreur s'est produite lors de la récupération de la liste des playlists:", all_playlists.data.error);
-    }
-    return all_playlists;
-}
-
-async function getPlaylistTracks(accessToken, playlist_id) {
-    const response = await axios.get(`https://api.spotify.com/v1/playlists/${playlist_id}/tracks`, {
-        headers: {
-            Authorization: "Bearer " + accessToken,
-        },
-      }
-    );
-
-    if (response.data.error) {
-      console.error("Une erreur s'est produite lors de la récupération des pistes de la playlist:",);
-      throw response.data.error;
-  }
-    return response.data.items.map(item => {
-        const track = item.track;
-        const added_by_id = item.added_by.id;
-
-        return {
-            "id_track": track.id,
-            "name": track.name,
-            "artist": track.artists[0].name,
-            "adder": nameDict[added_by_id],
-            "url": track.external_urls.spotify,
-        };
-    });
-}
 
 // #endregion
 
