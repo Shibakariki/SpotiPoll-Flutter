@@ -49,7 +49,7 @@ export default class Database {
         }, 'An error occurred while adding the track:');
     }
 
-    async deleteTrack(trackId) {
+    async removeTrack(trackId) {
         return await handleError(async () => {
             await this._checkAuthentication();
             const ids = await this.getTrack(trackId);

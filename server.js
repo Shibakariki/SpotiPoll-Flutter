@@ -98,26 +98,31 @@ app.get("/getTrackList", async (req, res) => {
     return showAllTrack(res, allTrack, communHTML); //gère le 0 tracks et return un html
 });
 
-// TODO : Supprimer de la base les musiques qui ne sont pas dans la playlist Spotify
 async function saveTrackList(all_tracks) {
-  try {
-      // Pour chaque piste, on vérifie si elle existe déjà dans la base de données
-      let dbTrackList = await database.getTrackList();
+    try {
+        let dbTrackList = await database.getTrackList();
 
-      // Filtrer les pistes qui n'existent pas encore dans la base de données
-      let newTracks = all_tracks.filter(
-          track => !dbTrackList.some(dbTrack => dbTrack.id_track === track.id_track)
-      );
+        // Ajout de nouvelles pistes
+        let newTracks = all_tracks.filter(
+            track => !dbTrackList.some(dbTrack => dbTrack.id_track === track.id_track)
+        );
+        for (const track of newTracks) {
+            await database.addTrack(track);
+        }
 
-      for (const track of newTracks) {
-          await database.addTrack(track);
-      }
-  } catch (error) {
-    console.error('Une erreur s\'est produite lors de la sauvegarde des pistes dans la base de données :', error);
-    throw error;
-  }
+        // Suppression des pistes qui ne sont pas dans la playlist Spotify
+        let tracksToRemove = dbTrackList.filter(
+            dbTrack => !all_tracks.some(track => track.id_track === dbTrack.id_track)
+        );
+        for (const track of tracksToRemove) {
+            await database.removeTrack(track.id_track);
+        }
+
+    } catch (error) {
+        console.error('Une erreur s\'est produite lors de la mise à jour des pistes dans la base de données :', error);
+        throw error;
+    }
 }
-
 
 function generateTrackRow(item) {
     return `<tr>
