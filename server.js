@@ -30,7 +30,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Liste des noms de variables d'environnement requises
-const requiredEnvVariables = ['REDIRECT_URL', 'DISCORD_CHANNEL_ID', 'DISCORD_TOKEN', 'DELETE_SECURE_CODE', 'SPOTIFY_PLAYLIST_ID', 'SPOTIFY_CLIENT_SECRET', 'SPOTIFY_CLIENT_ID', 'PB_USERNAME', 'PB_PASSWORD'];
+const requiredEnvVariables = ['REDIRECT_URL', 'DISCORD_CHANNEL_ID', 'DISCORD_TOKEN', 'DELETE_SECURE_CODE', 'SPOTIFY_PLAYLIST_NAME', 'SPOTIFY_CLIENT_SECRET', 'SPOTIFY_CLIENT_ID', 'PB_USERNAME', 'PB_PASSWORD'];
 
 // Fonction de vérification des variables d'environnement
 function checkEnvVariables() {
@@ -67,9 +67,11 @@ app.use("/static", express.static('./views/static/'));
 //this page contains the link to the spotify authorization page
 //contains custom url queries that pertain to my specific app
 app.get("/", async (req, res) => {
+    // Si on a un token pour appeler l'API Spotify, on redirige vers la page /track_list
     if (spotify.isTokenSet()) {
         return res.redirect('/track_list');
     } else {
+    // Sinon, on utilise le compte du premier utilisateur pour générer le token
         return res.sendFile(path.join(__dirname, "views/connect.html"));
     }
 });
@@ -77,37 +79,41 @@ app.get("/", async (req, res) => {
 // #region Gestion des Tracks
 
 app.get("/track_list", async (req, res) => {
-    if (req.cookies.spotiPollToken === undefined) {
+    if (!spotify.isTokenSet()) {
         return res.redirect('/');
     } else {
         return res.sendFile(path.join(__dirname, "views/tracklist.html"));
     }
 });
 
-app.get('/refreshTrackList', (req, res) => {
+app.get('/authSpotify', async (req, res) => {
     const spotifyURL = "https://accounts.spotify.com/authorize?client_id=" + process.env.SPOTIFY_CLIENT_ID + "&response_type=code&redirect_uri=" + process.env.REDIRECT_URL + "&scope=" + scope;
-
     return res.redirect(spotifyURL);
 });
 
-app.get("/getTrackList", async (req, res) => {
-    try {
-        if (req.cookies.spotiPollToken === undefined) {
-            return res.redirect('/');
-        } else {
-            log("VISIT", req.cookies.username + " a visité la page /track_list");
-
-            let communHTML = ``;
-            const allTrack = await database.getTrackList();
-            return showAllTrack(res, allTrack, communHTML); //gère le 0 tracks et return un html
+app.get('/refreshTrackList', async (req, res) => {
+    if (!spotify.isTokenSet()) {
+        return res.redirect('/');
+    } else {
+        try {
+            refreshTrackList();
+            return res.redirect('/track_list');
+        } catch (error) {
+            console.error('Une erreur s\'est produite lors de la récupération des pistes :', error);
+            return res.redirect('/track_list');
         }
-    } catch (error) {
-        console.error('Une erreur s\'est produite dans la route "/track_list":', error);
-        // Gérer l'erreur en renvoyant une réponse appropriée à l'utilisateur
-        res.status(500).send('Une erreur s\'est produite. Veuillez réessayer ultérieurement.');
     }
 });
 
+
+app.get("/getTrackList", async (req, res) => {
+    log("VISIT", req.cookies.username + " a visité la page /track_list");
+    let communHTML = ``;
+    const allTrack = await database.getTrackList();
+    return showAllTrack(res, allTrack, communHTML); //gère le 0 tracks et return un html
+});
+
+// TODO : Supprimer de la base les musiques qui ne sont pas dans la playlist Spotify
 async function saveTrackList(all_tracks) {
   try {
       // Pour chaque piste, on vérifie si elle existe déjà dans la base de données
@@ -163,21 +169,19 @@ function showAllTrack(res, allTrack, communHTML) {
 
 // #region Connexion Spotify
 
+/* On recoit le retour de la demande d'autorisation d'accès de Spotify ici */
 app.get("/account", async (req, res) => {
     try {
+        // Si quelqu'un d'autre essaie d'accéder à cette page, on le redirige vers la page d'accueil
         if (!req.query.code) {
             return res.redirect('/');
         }
 
+        // On enregistre les token
         await spotify.getAccessToken(req.query.code)
-        const allPlaylists = await spotify.getAllPlaylist();
+        await refreshTrackList()
 
-        let playlistId = allPlaylists.data["items"].filter((item) => item.name === process.env.SPOTIFY_PLAYLIST_ID)[0]["id"];
-        const playlistTracks = await spotify.getPlaylistTracks(playlistId);
-
-        await saveTrackList(playlistTracks);
-
-        await log("INIT", "Initialisation effectuée par " + req.cookies.username)
+        log("INIT", "Initialisation effectuée par " + req.cookies.username)
         return res.redirect('/track_list');
 
     } catch (error) {
@@ -186,28 +190,24 @@ app.get("/account", async (req, res) => {
     }
 });
 
-async function checkUserExist(userId, accessToken, res) {
-  try {
-    if (await database.getUser(userId) === undefined || (await database.getUser(userId)).length === 0) {
-      await addUser(userId);
-    }
-    res.cookie("username", nameDict[userId], {
-      expires: new Date(Date.now() + 1800000),
-      httpOnly: false
-    }); //cookie expire in 30 minutes
-    res.cookie("spotiPollToken", userId, {
-      expires: new Date(Date.now() + 1800000),
-      httpOnly: false
-    }); //cookie expire in 30 minutes
-    res.cookie("spotifAccessToken", accessToken, {
-      expires: new Date(Date.now() + 1800000),
-      httpOnly: false
-    }); //cookie expire in 30 minutes
-    return true;
+async function refreshTrackList() {
+    // On récupère les playlist de l'utilisateur
+    const allPlaylists = await spotify.getAllPlaylist()
+    // On récupère l'id de la playlist concernée
+    let playlistId = allPlaylists.data["items"].filter((item) => item.name === process.env.SPOTIFY_PLAYLIST_NAME)
 
-    } catch (error) {
-        console.error('Une erreur s\'est produite lors de la vérification de l\'existence de l\'utilisateur :', error);
-        return false;
+    console.log("playlistId", playlistId)
+
+    if (playlistId === undefined || playlistId.length === 0) {
+        // L'utilisateur n'a pas les droits sur la playlist
+        spotify.resetToken()
+        console.log("Vous n'avez pas les droits sur la playlist " + process.env.SPOTIFY_PLAYLIST_NAME)
+        return res.send("Vous n'avez pas les droits sur la playlist " + process.env.SPOTIFY_PLAYLIST_NAME)
+
+    } else {
+        // On récupère les musiques de la playlist
+        const playlistTracks = await spotify.getPlaylistTracks(playlistId[0]["id"])
+        await saveTrackList(playlistTracks)
     }
 }
 

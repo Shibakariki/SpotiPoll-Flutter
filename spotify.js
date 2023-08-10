@@ -35,6 +35,11 @@ class SpotifyClient {
         return this.accessToken != null && this.refreshToken != null;
     }
 
+    resetToken() {
+        this.accessToken = null;
+        this.refreshToken = null;
+    }
+
     async getAllPlaylist() {
         const all_playlists = await axios.get("https://api.spotify.com/v1/me/playlists", {
             headers: {
