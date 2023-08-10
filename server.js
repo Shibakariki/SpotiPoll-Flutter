@@ -175,22 +175,14 @@ app.get("/account", async (req, res) => {
     }
 });
 
-// TODO : Il faudrait stocker l'id de la playlist pour éviter un call à l'API Spotify à chaque fois
 async function refreshTrackList() {
-    // On récupère les playlist de l'utilisateur
-    const allPlaylists = await spotify.getAllPlaylist()
-    // On récupère l'id de la playlist concernée
-    let playlistId = allPlaylists.data["items"].filter((item) => item.name === process.env.SPOTIFY_PLAYLIST_NAME)
-
-    if (playlistId === undefined || playlistId.length === 0) {
-        // L'utilisateur n'a pas les droits sur la playlist
-        spotify.resetToken()
-        console.log("Vous n'avez pas les droits sur la playlist " + process.env.SPOTIFY_PLAYLIST_NAME)
-        throw "Vous n'avez pas les droits sur la playlist " + process.env.SPOTIFY_PLAYLIST_NAME
-    } else {
-        // On récupère les musiques de la playlist
-        const playlistTracks = await spotify.getPlaylistTracks(playlistId[0]["id"])
-        await saveTrackList(playlistTracks)
+    try {
+        const playlistId = await spotify.getPlaylistId();
+        const playlistTracks = await spotify.getPlaylistTracks(playlistId);
+        await saveTrackList(playlistTracks);
+    } catch (error) {
+        console.error(error);
+        spotify.resetToken();
     }
 }
 

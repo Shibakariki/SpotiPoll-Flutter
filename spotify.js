@@ -18,6 +18,7 @@ class SpotifyClient {
                         playlist-read-private
                         playlist-modify-public`;
         this.base64ClientID = Buffer.from(clientID + ":" + clientSecret).toString("base64")
+        this.cachedPlaylistId = null;
     }
 
     async getAccessToken(code) {
@@ -85,11 +86,25 @@ class SpotifyClient {
         });
     }
 
+    async getPlaylistId() {
+        if (this.cachedPlaylistId) return this.cachedPlaylistId;
+
+        const allPlaylists = await this.getAllPlaylist();
+        const playlist = allPlaylists.data["items"].find((item) => item.name === process.env.SPOTIFY_PLAYLIST_NAME);
+
+        if (!playlist) {
+            throw "Vous n'avez pas les droits sur la playlist " + process.env.SPOTIFY_PLAYLIST_NAME;
+        }
+
+        this.cachedPlaylistId = playlist.id;
+        return this.cachedPlaylistId;
+    }
+
     async deleteTrack(res, playlist_id, track_id) {
         try {
             const delete_track = await axios({
                 method: "delete", url: `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`, headers: {
-                    Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json",
+                    Authorization: `Bearer ${this.accessToken}`, "Content-Type": "application/json",
                 }, data: {
                     tracks: [{
                         uri: `spotify:track:${track_id}`
