@@ -1,5 +1,4 @@
 import express from "express";
-import queryString from "node:querystring";
 import axios from "axios";
 import CryptoJS from "crypto-js";
 import cookieParser from "cookie-parser";
@@ -64,8 +63,6 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/static", express.static('./views/static/'));
 
-//this page contains the link to the spotify authorization page
-//contains custom url queries that pertain to my specific app
 app.get("/", async (req, res) => {
     // Si on a un token pour appeler l'API Spotify, on redirige vers la page /track_list
     if (spotify.isTokenSet()) {
@@ -77,7 +74,6 @@ app.get("/", async (req, res) => {
 });
 
 // #region Gestion des Tracks
-
 app.get("/track_list", async (req, res) => {
     if (!spotify.isTokenSet()) {
         return res.redirect('/');
@@ -104,7 +100,6 @@ app.get('/refreshTrackList', async (req, res) => {
         }
     }
 });
-
 
 app.get("/getTrackList", async (req, res) => {
     log("VISIT", req.cookies.username + " a visité la page /track_list");
@@ -177,7 +172,7 @@ app.get("/account", async (req, res) => {
             return res.redirect('/');
         }
 
-        // On enregistre les token
+        // On enregistre les tokens
         await spotify.getAccessToken(req.query.code)
         await refreshTrackList()
 
@@ -190,6 +185,7 @@ app.get("/account", async (req, res) => {
     }
 });
 
+// TODO : Il faudrait stocker l'id de la playlist pour éviter un call à l'API Spotify à chaque fois
 async function refreshTrackList() {
     // On récupère les playlist de l'utilisateur
     const allPlaylists = await spotify.getAllPlaylist()
@@ -234,7 +230,6 @@ async function addUser(userId) {
         throw error;
     }
 }
-
 
 
 // #endregion
@@ -329,34 +324,6 @@ app.get("/vote", async (req, res) => {
         return res.redirect("/");
     }
 });
-
-// #endregion
-
-// #region Delete Track
-
-async function deleteTrack(res, playlist_id, track_id) {
-
-    try {
-        const delete_track = await axios({
-            method: "delete", url: `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`, headers: {
-                Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json",
-            }, data: {
-                tracks: [{
-                    uri: `spotify:track:${track_id}`
-                }],
-            },
-        });
-
-        if (delete_track.data.error) {
-            res.send("Error: " + delete_track.data.error);
-            return res.redirect('/track_list');
-        }
-    } catch (err) {
-        console.error(err);
-        res.send("Error: " + err.message);
-        return res.redirect('/track_list');
-    }
-}
 
 // #endregion
 

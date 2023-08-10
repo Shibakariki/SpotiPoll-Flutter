@@ -1,8 +1,7 @@
 import axios from 'axios';
-import qs from 'qs';
 import queryString from "node:querystring";
 
-
+// TODO : Gérer le refresh du token
 class SpotifyClient {
     constructor(redirectURI, clientID, clientSecret) {
         this.accessToken = null;
@@ -77,6 +76,30 @@ class SpotifyClient {
                 "url": track.external_urls.spotify,
             };
         });
+    }
+
+    async deleteTrack(res, playlist_id, track_id) {
+
+        try {
+            const delete_track = await axios({
+                method: "delete", url: `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`, headers: {
+                    Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json",
+                }, data: {
+                    tracks: [{
+                        uri: `spotify:track:${track_id}`
+                    }],
+                },
+            });
+    
+            if (delete_track.data.error) {
+                res.send("Error: " + delete_track.data.error);
+                return res.redirect('/track_list');
+            }
+        } catch (err) {
+            console.error(err);
+            res.send("Error: " + err.message);
+            return res.redirect('/track_list');
+        }
     }
 
 }
