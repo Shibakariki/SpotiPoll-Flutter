@@ -44,15 +44,6 @@ function checkEnvVariables() {
 
 checkEnvVariables()
 
-const scope = `user-modify-playback-state
-    user-read-playback-state
-    user-read-currently-playing
-    user-library-modify
-    user-library-read
-    user-top-read
-    playlist-read-private
-    playlist-modify-public`;
-
 const database = new Database();
 const spotify = new Spotify(process.env.REDIRECT_URL, process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET)
 app.listen(1443, () => {
@@ -83,8 +74,7 @@ app.get("/track_list", async (req, res) => {
 });
 
 app.get('/authSpotify', async (req, res) => {
-    const spotifyURL = "https://accounts.spotify.com/authorize?client_id=" + process.env.SPOTIFY_CLIENT_ID + "&response_type=code&redirect_uri=" + process.env.REDIRECT_URL + "&scope=" + scope;
-    return res.redirect(spotifyURL);
+    return res.redirect(spotify.getAuthURL());
 });
 
 app.get('/refreshTrackList', async (req, res) => {
@@ -92,7 +82,7 @@ app.get('/refreshTrackList', async (req, res) => {
         return res.redirect('/');
     } else {
         try {
-            refreshTrackList();
+            await refreshTrackList();
             return res.redirect('/track_list');
         } catch (error) {
             console.error('Une erreur s\'est produite lors de la récupération des pistes :', error);
@@ -192,14 +182,11 @@ async function refreshTrackList() {
     // On récupère l'id de la playlist concernée
     let playlistId = allPlaylists.data["items"].filter((item) => item.name === process.env.SPOTIFY_PLAYLIST_NAME)
 
-    console.log("playlistId", playlistId)
-
     if (playlistId === undefined || playlistId.length === 0) {
         // L'utilisateur n'a pas les droits sur la playlist
         spotify.resetToken()
         console.log("Vous n'avez pas les droits sur la playlist " + process.env.SPOTIFY_PLAYLIST_NAME)
-        return res.send("Vous n'avez pas les droits sur la playlist " + process.env.SPOTIFY_PLAYLIST_NAME)
-
+        throw "Vous n'avez pas les droits sur la playlist " + process.env.SPOTIFY_PLAYLIST_NAME
     } else {
         // On récupère les musiques de la playlist
         const playlistTracks = await spotify.getPlaylistTracks(playlistId[0]["id"])

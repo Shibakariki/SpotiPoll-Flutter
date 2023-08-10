@@ -3,12 +3,20 @@ import queryString from "node:querystring";
 
 // TODO : Gérer le refresh du token
 class SpotifyClient {
-    constructor(redirectURI, clientID, clientSecret) {
+    constructor(redirectURI, clientID, clientSecret, scope) {
         this.accessToken = null;
         this.refreshToken = null;
         this.redirectURI = redirectURI;
         this.clientID = clientID;
         this.clientSecret = clientSecret;
+        this.scope = `user-modify-playback-state
+                        user-read-playback-state
+                        user-read-currently-playing
+                        user-library-modify
+                        user-library-read
+                        user-top-read
+                        playlist-read-private
+                        playlist-modify-public`;
         this.base64ClientID = Buffer.from(clientID + ":" + clientSecret).toString("base64")
     }
 
@@ -20,12 +28,12 @@ class SpotifyClient {
                 Authorization: "Basic " + this.base64ClientID, "Content-Type": "application/x-www-form-urlencoded",
             },
         });
-    
+
         if (spotifyResponse.data.error) {
             console.error("Une erreur s'est produite lors de la récupération de l'access token:", spotifyResponse.data.error);
             throw spotifyResponse.data.error;
         }
-        
+
         this.accessToken = spotifyResponse.data.access_token
         this.refreshToken = spotifyResponse.data.refresh_token
     }
@@ -45,7 +53,7 @@ class SpotifyClient {
                 Authorization: "Bearer " + this.accessToken,
             },
         });
-    
+
         if (all_playlists.data.error) {
             console.error("Une erreur s'est produite lors de la récupération de la liste des playlists:", all_playlists.data.error);
         }
@@ -57,17 +65,16 @@ class SpotifyClient {
             headers: {
                 Authorization: "Bearer " + this.accessToken,
             },
-          }
-        );
-    
+        });
+
         if (response.data.error) {
-          console.error("Une erreur s'est produite lors de la récupération des pistes de la playlist:",);
-          throw response.data.error;
-      }
+            console.error("Une erreur s'est produite lors de la récupération des pistes de la playlist:",);
+            throw response.data.error;
+        }
         return response.data.items.map(item => {
             const track = item.track;
             const added_by_id = item.added_by.id;
-    
+
             return {
                 "id_track": track.id,
                 "name": track.name,
@@ -79,7 +86,6 @@ class SpotifyClient {
     }
 
     async deleteTrack(res, playlist_id, track_id) {
-
         try {
             const delete_track = await axios({
                 method: "delete", url: `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`, headers: {
@@ -90,7 +96,7 @@ class SpotifyClient {
                     }],
                 },
             });
-    
+
             if (delete_track.data.error) {
                 res.send("Error: " + delete_track.data.error);
                 return res.redirect('/track_list');
@@ -102,6 +108,10 @@ class SpotifyClient {
         }
     }
 
+    getAuthURL() {
+        return `https://accounts.spotify.com/authorize?client_id=${process.env.SPOTIFY_CLIENT_ID}&response_type=code`
+            + `&redirect_uri=${process.env.REDIRECT_URL}&scope=${this.scope}`;
+    }
 }
 
 export default SpotifyClient;
