@@ -93,9 +93,8 @@ app.get('/refreshTrackList', async (req, res) => {
 
 app.get("/getTrackList", async (req, res) => {
     log("VISIT", req.cookies.username + " a visité la page /track_list");
-    let communHTML = ``;
     const allTrack = await database.getTrackList();
-    return showAllTrack(res, allTrack, communHTML); //gère le 0 tracks et return un html
+    res.send(allTrack);
 });
 
 async function saveTrackList(all_tracks) {
