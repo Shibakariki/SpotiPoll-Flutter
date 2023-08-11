@@ -63,18 +63,14 @@ function initializePocketBase(req, res, next) {
     next();
 }
 
-// Middleware to refresh the authentication state if valid
 async function refreshAuthState(req, res, next) {
     try {
         if (req.pbClient.authStore.isValid) {
-            console.log("AuthStore is valid, refreshing...");
             await req.pbClient.collection('users').authRefresh();
         }
         next();
     } catch (error) {
         console.error('Error refreshing authentication state:', error);
-        
-        // Clear the auth store on failed refresh
         req.pbClient.authStore.clear();
         return res.status(401).redirect('/');
     }
@@ -201,7 +197,7 @@ app.get("/account", async (req, res) => {
 
 async function refreshTrackList() {
     try {
-        const playlistId = await spotify.getPlaylistId();
+        const playlistId = await spotify.getPlaylistId(process.env.SPOTIFY_PLAYLIST_NAME);
         const playlistTracks = await spotify.getPlaylistTracks(playlistId);
         await saveTrackList(playlistTracks);
     } catch (error) {
