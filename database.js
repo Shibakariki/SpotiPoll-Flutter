@@ -15,7 +15,7 @@ const handleError = async (action, errorMessage) => {
 
 export default class Database {
     constructor() {
-        this.pb = new PocketBase('http://127.0.0.1:8090');
+    this.pb = new PocketBase(process.env.PB_URI);
         this.username = process.env.PB_USERNAME;
         this.password = process.env.PB_PASSWORD;
     }

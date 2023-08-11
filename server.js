@@ -49,7 +49,7 @@ app.use(cookieParser());
 app.use("/static", express.static('./views/static/'));
 
 function initializePocketBase(req, res, next) {
-    req.pbClient = new PocketBase("http://127.0.0.1:8090");
+    req.pbClient = new PocketBase(process.env.PB_URI);
     req.pbClient.authStore.loadFromCookie(req.headers.cookie || '');
     req.pbClient.authStore.onChange(() => {
         res.setHeader("Set-Cookie", req.pbClient.authStore.exportToCookie({ httpOnly: false }));
