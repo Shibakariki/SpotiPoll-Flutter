@@ -36,6 +36,30 @@
           "thumbs": null,
           "protected": false
         }
+      },
+      {
+        "id": "rbcv7cnl",
+        "name": "id_spotify",
+        "type": "text",
+        "system": false,
+        "required": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      },
+      {
+        "id": "3zmjxpuc",
+        "name": "avatarUrl",
+        "type": "text",
+        "system": false,
+        "required": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
       }
     ],
     "indexes": [],
@@ -133,45 +157,6 @@
     "options": {}
   },
   {
-    "id": "yiypex51iso8jkx",
-    "name": "User",
-    "type": "base",
-    "system": false,
-    "schema": [
-      {
-        "id": "xs7ysqiu",
-        "name": "username",
-        "type": "text",
-        "system": false,
-        "required": false,
-        "options": {
-          "min": null,
-          "max": null,
-          "pattern": ""
-        }
-      },
-      {
-        "id": "gdic1wtq",
-        "name": "id_user",
-        "type": "text",
-        "system": false,
-        "required": false,
-        "options": {
-          "min": null,
-          "max": null,
-          "pattern": ""
-        }
-      }
-    ],
-    "indexes": [],
-    "listRule": null,
-    "viewRule": null,
-    "createRule": null,
-    "updateRule": null,
-    "deleteRule": null,
-    "options": {}
-  },
-  {
     "id": "uc6tsksbrlju2kb",
     "name": "Log",
     "type": "base",
@@ -242,13 +227,13 @@
         }
       },
       {
-        "id": "pmfy0alf",
+        "id": "o3tcvhzl",
         "name": "user_id",
         "type": "relation",
         "system": false,
         "required": false,
         "options": {
-          "collectionId": "yiypex51iso8jkx",
+          "collectionId": "_pb_users_auth_",
           "cascadeDelete": false,
           "minSelect": null,
           "maxSelect": 1,
