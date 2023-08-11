@@ -1,15 +1,15 @@
 import express from "express";
 import CryptoJS from "crypto-js";
 import cookieParser from "cookie-parser";
-import {config as configDotenv} from "dotenv";
+import { config as configDotenv } from "dotenv";
 
 import PocketBase from "pocketbase/cjs";
 
 import Database from './database.js';
 import Spotify from './spotify.js';
 
-import path, {dirname} from "path";
-import {fileURLToPath} from 'url';
+import path, { dirname } from "path";
+import { fileURLToPath } from 'url';
 
 import eventsource from 'eventsource';
 
@@ -48,14 +48,9 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/static", express.static('./views/static/'));
 
-// Middleware to initialize and attach the PocketBase client to the request object
 function initializePocketBase(req, res, next) {
     req.pbClient = new PocketBase("http://127.0.0.1:8090");
-
-    // Load store data from the request cookie string
     req.pbClient.authStore.loadFromCookie(req.headers.cookie || '');
-
-    // Update response cookie header on AuthStore change
     req.pbClient.authStore.onChange(() => {
         res.setHeader("Set-Cookie", req.pbClient.authStore.exportToCookie({ httpOnly: false }));
     });
@@ -88,19 +83,22 @@ async function verifyToken(req, res, next) {
     });
 }
 
+// TODO : Revoir la logique de connection pour intégrer le verifyToken
+// Et revoir l'utilisation du isTokenSet pour éviter qu'il soit nécessaire à chaque fois
 app.get("/", async (req, res) => {
-    // Si on a un token pour appeler l'API Spotify, on redirige vers la page /track_list
-    if (spotify.isTokenSet()) {
-        if (req.cookies.token) {
-            return res.redirect('/track_list');
-        } else {
-            return res.sendFile(path.join(__dirname, "views/connect.html"));
-        }
-    } else {
-    // Sinon, on utilise le compte du premier utilisateur pour générer le token
-        return res.sendFile(path.join(__dirname, "views/adminConnect.html"));
+    if (!spotify.isTokenSet()) {
+        return res.sendFile(path.join(__dirname, "views/initAdmin.html"));
     }
+
+    // If a cookie token exists, redirect to the track_list page
+    if (req.cookies.token) {
+        return res.redirect('/track_list');
+    }
+
+    // If the cookie token does not exist, redirect to the connect page
+    return res.sendFile(path.join(__dirname, "views/connect.html"));
 });
+
 
 app.get("/user_connection", verifyToken, async (req, res) => {
     if (!spotify.isTokenSet()) {
@@ -239,7 +237,7 @@ app.get("/getPollData", verifyToken, async (req, res) => {
         };
 
         return res.send(response);
-        }
+    }
     res.redirect("/");
 });
 
