@@ -1,8 +1,9 @@
 import express from "express";
-import axios from "axios";
 import CryptoJS from "crypto-js";
 import cookieParser from "cookie-parser";
 import {config as configDotenv} from "dotenv";
+
+import PocketBase from "pocketbase/cjs";
 
 import Database from './database.js';
 import Spotify from './spotify.js';
@@ -17,13 +18,6 @@ const app = express();
 configDotenv();
 
 global.EventSource = eventsource;
-
-const nameDict = {
-    "uudinn": "Axel",
-    "11183209297": "Céline",
-    "8oyik21m36g0xygzkhomv46ah": "Maxime",
-    "312qcpi3foqze5fnflaounnkpul4": "Le goat"
-}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -54,20 +48,49 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/static", express.static('./views/static/'));
 
-function verifyToken(req, res, next) {
-    const token = req.cookies.token;
+// Middleware to initialize and attach the PocketBase client to the request object
+function initializePocketBase(req, res, next) {
+    req.pbClient = new PocketBase("http://127.0.0.1:8090");
 
-    if (!token) {
-        // Pas de token dans les cookies, rediriger vers l'accueil ou renvoyer une erreur
-        return res.redirect('/');
-    }
+    // Load store data from the request cookie string
+    req.pbClient.authStore.loadFromCookie(req.headers.cookie || '');
 
-    // TODO : Check token validity with pocketbase
+    // Update response cookie header on AuthStore change
+    req.pbClient.authStore.onChange(() => {
+        res.setHeader("Set-Cookie", req.pbClient.authStore.exportToCookie({ httpOnly: false }));
+    });
 
     next();
-
 }
 
+// Middleware to refresh the authentication state if valid
+async function refreshAuthState(req, res, next) {
+    try {
+        if (req.pbClient.authStore.isValid) {
+            console.log("AuthStore is valid, refreshing...");
+            await req.pbClient.collection('users').authRefresh();
+        }
+        next();
+    } catch (error) {
+        console.error('Error refreshing authentication state:', error);
+        
+        // Clear the auth store on failed refresh
+        req.pbClient.authStore.clear();
+        return res.status(401).redirect('/');
+    }
+}
+
+async function verifyToken(req, res, next) {
+    initializePocketBase(req, res, async () => {
+        await refreshAuthState(req, res, async () => {
+            if (req.pbClient.authStore.isValid) {
+                next();
+            } else {
+                return res.redirect('/');
+            }
+        });
+    });
+}
 
 app.get("/", async (req, res) => {
     // Si on a un token pour appeler l'API Spotify, on redirige vers la page /track_list
@@ -177,31 +200,6 @@ async function refreshTrackList() {
         spotify.resetToken();
     }
 }
-
-async function getUserId(res, accessToken) {
-    const response = await axios.get("https://api.spotify.com/v1/me", {
-        headers: {
-            Authorization: "Bearer " + accessToken,
-        },
-    });
-
-    if (response.data.error) {
-        console.error("Une erreur s'est produite lors de la récupération de l'ID de l'utilisateur:", response.data.error);
-        throw response.data.error;
-    }
-
-    return response.data.id;
-}
-
-async function addUser(userId) {
-    try {
-        return await database.addUser(userId, nameDict[userId]);
-    } catch (error) {
-        console.error('Une erreur s\'est produite lors de l\'ajout de l\'utilisateur :', error);
-        throw error;
-    }
-}
-
 
 // #endregion
 

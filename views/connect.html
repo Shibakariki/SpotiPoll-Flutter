@@ -58,15 +58,21 @@
 <script>
 
     async function authenticateWithSpotify() {
-        const pb = new PocketBase('http://127.0.0.1:8090')
+        const client = new PocketBase('http://127.0.0.1:8090')
 
-        const authData = await pb.collection('users').authWithOAuth2({ provider: 'spotify' });
+        client.authStore.loadFromCookie(document.cookie);
 
-        console.log(pb.authStore.isValid);
-        console.log(pb.authStore.token);
-        console.log(pb.authStore.model.id);
+        client.authStore.onChange(() => {
+            document.cookie = client.authStore.exportToCookie({ httpOnly: false });
+        })
+
+        const authData = await client.collection('users').authWithOAuth2({ provider: 'spotify' });
+
+        console.log(client.authStore.isValid);
+        console.log(client.authStore.token);
+        console.log(client.authStore.model.id);
         console.log(authData);
-        console.log(pb.authStore);
+        console.log(client.authStore);
 
         const data = {
             "name": authData.meta.name,
@@ -75,11 +81,7 @@
             "avatarUrl" : authData.meta.avatarUrl,
         };
 
-        await pb.collection('users').update(pb.authStore.model.id, data);
-
-        // save token in local storage and in cookies
-        localStorage.setItem('token', pb.authStore.token);
-        document.cookie = `token=${pb.authStore.token}`;
+        await client.collection('users').update(client.authStore.model.id, data);
 
         window.location.href = '/track_list';
     }
