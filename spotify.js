@@ -19,6 +19,19 @@ class SpotifyClient {
                         playlist-modify-public`;
         this.base64ClientID = Buffer.from(clientID + ":" + clientSecret).toString("base64")
         this.cachedPlaylistId = null;
+
+        axios.interceptors.response.use(
+            response => response,
+            async error => {
+                if (error.response.status === 401) {
+                    await this.refreshAccessToken();
+                    error.config.headers['Authorization'] = `Bearer ${this.accessToken}`;
+                    return axios(error.config);
+                }
+                return Promise.reject(error);
+            }
+        );
+        
     }
 
     async getAccessToken(code) {
@@ -47,6 +60,35 @@ class SpotifyClient {
         this.accessToken = null;
         this.refreshToken = null;
     }
+
+    async refreshAccessToken() {
+        try {
+            const spotifyResponse = await axios.post("https://accounts.spotify.com/api/token", queryString.stringify({
+                grant_type: "refresh_token",
+                refresh_token: this.refreshToken,
+            }), {
+                headers: {
+                    Authorization: "Basic " + this.base64ClientID,
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+            });
+    
+            if (spotifyResponse.data.error) {
+                console.error("Error refreshing access token:", spotifyResponse.data.error);
+                throw new Error(spotifyResponse.data.error);
+            }
+    
+            this.accessToken = spotifyResponse.data.access_token;
+
+            if (spotifyResponse.data.refresh_token) {
+                this.refreshToken = spotifyResponse.data.refresh_token;
+            }
+        } catch (error) {
+            console.error("Failed to refresh access token:", error);
+            throw error;
+        }
+    }
+  
 
     getHeaders(contentType = "application/json") {
         return {
