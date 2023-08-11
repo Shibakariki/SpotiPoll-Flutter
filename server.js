@@ -54,6 +54,21 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/static", express.static('./views/static/'));
 
+function verifyToken(req, res, next) {
+    const token = req.cookies.token;
+
+    if (!token) {
+        // Pas de token dans les cookies, rediriger vers l'accueil ou renvoyer une erreur
+        return res.redirect('/');
+    }
+
+    // TODO : Check token validity with pocketbase
+
+    next();
+
+}
+
+
 app.get("/", async (req, res) => {
     // Si on a un token pour appeler l'API Spotify, on redirige vers la page /track_list
     if (spotify.isTokenSet()) {
@@ -69,7 +84,7 @@ app.get("/", async (req, res) => {
 });
 
 // #region Gestion des Tracks
-app.get("/track_list", async (req, res) => {
+app.get("/track_list", verifyToken, async (req, res) => {
     if (!spotify.isTokenSet()) {
         return res.redirect('/');
     } else {
@@ -192,49 +207,39 @@ async function addUser(userId) {
 
 // #region Poll
 
-app.get("/poll", (req, res) => {
-    if (req.cookies.spotiPollToken === undefined) {
-        return res.redirect('/');
-    } else {
-        res.sendFile(path.join(__dirname, "views/poll.html"));
-    }
-
+app.get("/poll", verifyToken, (req, res) => {
     log("VISIT", req.cookies.username + " a visité la page /poll")
-
+    res.sendFile(path.join(__dirname, "views/poll.html"));
 });
 
-app.get("/getPollData", async (req, res) => {
-    if (req.cookies.spotiPollToken === undefined) {
-        return res.redirect('/');
-    } else {
-      const current_user = await database.getUser(req.cookies.spotiPollToken);
-      if (current_user.length > 0) {
-        const current_user_id = current_user[0].id;
-        let trackList = await database.getTrackList();
-        if (trackList.length > 0) {
-            const maxValue = trackList.length - 1;
-            const randomNumber = generateRandomNumber(maxValue);
-            const track = trackList[randomNumber];
-            
-            const current_user_vote = await database.getTodayUserVote(current_user_id);
-            let vote;
-            if (current_user_vote.length === 0) {
-              vote = 0;
-            } else {
-              vote = current_user_vote[0].vote_answer;
-            }
+app.get("/getPollData", verifyToken, async (req, res) => {
+  const current_user = await database.getUser(req.cookies.spotiPollToken);
+  if (current_user.length > 0) {
+    const current_user_id = current_user[0].id;
+    let trackList = await database.getTrackList();
+    if (trackList.length > 0) {
+        const maxValue = trackList.length - 1;
+        const randomNumber = generateRandomNumber(maxValue);
+        const track = trackList[randomNumber];
 
-            const voteText = current_user_vote.length === 0 ? "Tu n'as pas encore voté" : "Tu as voté, mais tu peux modifier ton vote";
-            
-            const response = {
-              "track": track, "vote": vote, "voteText": voteText
-            };
-            
-            return res.send(response);
-          }
+        const current_user_vote = await database.getTodayUserVote(current_user_id);
+        let vote;
+        if (current_user_vote.length === 0) {
+          vote = 0;
+        } else {
+          vote = current_user_vote[0].vote_answer;
         }
-      res.redirect("/");
+
+        const voteText = current_user_vote.length === 0 ? "Tu n'as pas encore voté" : "Tu as voté, mais tu peux modifier ton vote";
+
+        const response = {
+          "track": track, "vote": vote, "voteText": voteText
+        };
+
+        return res.send(response);
+      }
     }
+  res.redirect("/");
 });
 
 function generateRandomNumber(maxValue) {
@@ -258,27 +263,24 @@ function generateRandomNumber(maxValue) {
     return Math.round((randomNumber / (Math.pow(2, 256) - 1)) * maxValue);
 }
 
-app.get("/vote", async (req, res) => {
-    if (req.cookies.spotiPollToken === undefined) {
-        return res.redirect('/');
-    } else {
-        log("VOTE", req.cookies.username + " a voté " + req.query.vote)
-        const current_user = await database.getUser(req.cookies.spotiPollToken);
-        if (current_user.length > 0) {
-          const current_user_id = current_user[0].id;
-          let trackList = await database.getTrackList();
-          if (trackList.length > 0) {
-              const maxValue = trackList.length - 1;
-              const randomNumber = generateRandomNumber(maxValue);
-              const track = trackList[randomNumber];
-              const track_id = track.id;
-              const vote = parseInt(req.query.vote);
-              await database.addVote(vote, current_user_id, track_id);
-            return res.redirect("/poll");
-          }
-        }
-        return res.redirect("/");
+app.get("/vote", verifyToken, async (req, res) => {
+    log("VOTE", req.cookies.username + " a voté " + req.query.vote)
+    const current_user = await database.getUser(req.cookies.spotiPollToken);
+    if (current_user.length > 0) {
+      const current_user_id = current_user[0].id;
+      let trackList = await database.getTrackList();
+      if (trackList.length > 0) {
+          const maxValue = trackList.length - 1;
+          const randomNumber = generateRandomNumber(maxValue);
+          const track = trackList[randomNumber];
+          const track_id = track.id;
+          const vote = parseInt(req.query.vote);
+          await database.addVote(vote, current_user_id, track_id);
+        return res.redirect("/poll");
+      }
     }
+    return res.redirect("/");
+
 });
 
 // #endregion
@@ -290,7 +292,7 @@ function log(type, message) {
     })
 }
 
-app.get("/result", async (req, res) => {
+app.get("/result", verifyToken, async (req, res) => {
     let votesList = await database.getTodayVotesList();
 
     // Un dictionnaire pour stocker le dernier vote de chaque utilisateur pour chaque morceau
