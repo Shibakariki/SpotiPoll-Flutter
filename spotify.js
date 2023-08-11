@@ -3,7 +3,7 @@ import queryString from "node:querystring";
 
 // TODO : Gérer le refresh du token
 class SpotifyClient {
-    constructor(redirectURI, clientID, clientSecret, scope) {
+    constructor(redirectURI, clientID, clientSecret) {
         this.accessToken = null;
         this.refreshToken = null;
         this.redirectURI = redirectURI;
@@ -48,25 +48,32 @@ class SpotifyClient {
         this.refreshToken = null;
     }
 
-    async getAllPlaylist() {
-        const all_playlists = await axios.get("https://api.spotify.com/v1/me/playlists", {
-            headers: {
-                Authorization: "Bearer " + this.accessToken,
-            },
-        });
+    getHeaders(contentType = "application/json") {
+        return {
+            Authorization: `Bearer ${this.accessToken}`,
+            "Content-Type": contentType,
+        };
+    }
 
-        if (all_playlists.data.error) {
-            console.error("Une erreur s'est produite lors de la récupération de la liste des playlists:", all_playlists.data.error);
-        }
-        return all_playlists;
+    async getAllPlaylist() {
+        try {
+            const all_playlists = await axios.get("https://api.spotify.com/v1/me/playlists", {
+                headers: this.getHeaders()
+            });
+            if (all_playlists.data.error) {
+                throw new Error(all_playlists.data.error);
+            }
+            return all_playlists;
+        } catch (error) {
+            console.error("Une erreur s'est produite lors de la récupération de la liste des playlists:", error);
+            throw error;
+        }        
     }
 
     // TODO : Stocker en BDD, la correspondance nom / id spotify
     async getPlaylistTracks(playlist_id) {
         const response = await axios.get(`https://api.spotify.com/v1/playlists/${playlist_id}/tracks`, {
-            headers: {
-                Authorization: "Bearer " + this.accessToken,
-            },
+            headers: this.getHeaders()
         });
     
         if (response.data.error) {
@@ -102,9 +109,7 @@ class SpotifyClient {
     
         try {
             const response = await axios.get(`https://api.spotify.com/v1/users/${userId}`, {
-                headers: {
-                    Authorization: "Bearer " + this.accessToken,
-                },
+                headers: this.getHeaders()
             });
     
             if (response.data.error) {
@@ -148,9 +153,8 @@ class SpotifyClient {
     async deleteTrack(res, playlist_id, track_id) {
         try {
             const delete_track = await axios({
-                method: "delete", url: `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`, headers: {
-                    Authorization: `Bearer ${this.accessToken}`, "Content-Type": "application/json",
-                }, data: {
+                method: "delete", url: `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`, headers: this.getHeaders()
+                , data: {
                     tracks: [{
                         uri: `spotify:track:${track_id}`
                     }],
