@@ -72,6 +72,7 @@ class SpotifyClient {
             console.error("Une erreur s'est produite lors de la récupération des pistes de la playlist:",);
             throw response.data.error;
         }
+
         return response.data.items.map(item => {
             const track = item.track;
             const added_by_id = item.added_by.id;
@@ -80,6 +81,7 @@ class SpotifyClient {
                 "id_track": track.id,
                 "name": track.name,
                 "artist": track.artists[0].name,
+                // TODO : Regarder dans la BDD le nom de l'utilisateur, sinon demander à Spotify
                 "adder": "NOT IMPLEMENTED ... YET",
                 "url": track.external_urls.spotify,
             };

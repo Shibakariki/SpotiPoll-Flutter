@@ -57,10 +57,14 @@ app.use("/static", express.static('./views/static/'));
 app.get("/", async (req, res) => {
     // Si on a un token pour appeler l'API Spotify, on redirige vers la page /track_list
     if (spotify.isTokenSet()) {
-        return res.redirect('/track_list');
+        if (req.cookies.token) {
+            return res.redirect('/track_list');
+        } else {
+            return res.sendFile(path.join(__dirname, "views/connect.html"));
+        }
     } else {
     // Sinon, on utilise le compte du premier utilisateur pour générer le token
-        return res.sendFile(path.join(__dirname, "views/connect.html"));
+        return res.sendFile(path.join(__dirname, "views/adminConnect.html"));
     }
 });
 
@@ -140,7 +144,7 @@ app.get("/account", async (req, res) => {
         await refreshTrackList()
 
         log("INIT", "Initialisation effectuée par " + req.cookies.username)
-        return res.redirect('/track_list');
+        return res.redirect('/');
 
     } catch (error) {
         console.error('Une erreur s\'est produite lors du traitement de la route "/account":', error);

@@ -54,9 +54,50 @@
     </style>
 </head>
 
+<script src="https://cdn.jsdelivr.net/gh/pocketbase/js-sdk@master/dist/pocketbase.umd.js"></script>
+<script>
+
+    async function authenticateWithSpotify() {
+        const pb = new PocketBase('http://127.0.0.1:8090')
+
+        const authData = await pb.collection('users').authWithOAuth2({ provider: 'spotify' });
+
+        console.log(pb.authStore.isValid);
+        console.log(pb.authStore.token);
+        console.log(pb.authStore.model.id);
+        console.log(authData);
+        console.log(pb.authStore);
+
+        const data = {
+            "name": authData.meta.name,
+            "id_spotify" : authData.meta.id,
+            "email": authData.meta.email,
+            "avatarUrl" : authData.meta.avatarUrl,
+        };
+
+        await pb.collection('users').update(pb.authStore.model.id, data);
+
+        // save token in local storage and in cookies
+        localStorage.setItem('token', pb.authStore.token);
+        document.cookie = `token=${pb.authStore.token}`;
+
+        window.location.href = '/track_list';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('cc').addEventListener('click', function() {
+            try {
+                authenticateWithSpotify();
+            } catch (e) {
+                console.log(e);
+            }
+        });
+    });
+
+</script>
 <body>
     <div class="center-container">
-        <a id="cc" href="/authSpotify"> Connect to Spotify
+        <a id="cc"> Connect to Spotify
             <img src="static/spotify.png" alt="Spotify Logo" id="spotify-logo">
         </a>
     </div>
