@@ -106,6 +106,15 @@ app.get("/", async (req, res) => {
     }
 });
 
+app.get("/user_connection", verifyToken, async (req, res) => {
+    if (!spotify.isTokenSet()) {
+        return res.redirect('/');
+    } else {
+        log("CONNECT", req.pbClient.authStore.baseModel.name + " s'est connecté");
+        return res.redirect("/track_list");
+    }
+});
+
 // #region Gestion des Tracks
 app.get("/track_list", verifyToken, async (req, res) => {
     if (!spotify.isTokenSet()) {
@@ -133,8 +142,8 @@ app.get('/refreshTrackList', async (req, res) => {
     }
 });
 
-app.get("/getTrackList", async (req, res) => {
-    log("VISIT", req.cookies.username + " a visité la page /track_list");
+app.get("/getTrackList", verifyToken, async (req, res) => {
+    log("VISIT", req.pbClient.authStore.baseModel.name + " a visité la page /track_list");
     const allTrack = await database.getTrackList();
     res.send(allTrack);
 });
@@ -181,7 +190,7 @@ app.get("/account", async (req, res) => {
         await spotify.getAccessToken(req.query.code)
         await refreshTrackList()
 
-        log("INIT", "Initialisation effectuée par " + req.cookies.username)
+        log("INIT", "Initialisation effectuée");
         return res.redirect('/');
 
     } catch (error) {
@@ -206,14 +215,13 @@ async function refreshTrackList() {
 // #region Poll
 
 app.get("/poll", verifyToken, (req, res) => {
-    log("VISIT", req.cookies.username + " a visité la page /poll")
+    log("VISIT", req.pbClient.authStore.baseModel.name + " a visité la page /poll")
     res.sendFile(path.join(__dirname, "views/poll.html"));
 });
 
 app.get("/getPollData", verifyToken, async (req, res) => {
-  const current_user = await database.getUser(req.cookies.spotiPollToken);
-  if (current_user.length > 0) {
-    const current_user_id = current_user[0].id;
+    const current_user = req.pbClient.authStore;
+    const current_user_id = current_user.baseModel.id;
     let trackList = await database.getTrackList();
     if (trackList.length > 0) {
         const maxValue = trackList.length - 1;
@@ -223,21 +231,20 @@ app.get("/getPollData", verifyToken, async (req, res) => {
         const current_user_vote = await database.getTodayUserVote(current_user_id);
         let vote;
         if (current_user_vote.length === 0) {
-          vote = 0;
+            vote = 0;
         } else {
-          vote = current_user_vote[0].vote_answer;
+            vote = current_user_vote[0].vote_answer;
         }
 
         const voteText = current_user_vote.length === 0 ? "Tu n'as pas encore voté" : "Tu as voté, mais tu peux modifier ton vote";
 
         const response = {
-          "track": track, "vote": vote, "voteText": voteText
+            "track": track, "vote": vote, "voteText": voteText, "name": current_user.baseModel.name
         };
 
         return res.send(response);
-      }
-    }
-  res.redirect("/");
+        }
+    res.redirect("/");
 });
 
 function generateRandomNumber(maxValue) {
@@ -262,20 +269,18 @@ function generateRandomNumber(maxValue) {
 }
 
 app.get("/vote", verifyToken, async (req, res) => {
-    log("VOTE", req.cookies.username + " a voté " + req.query.vote)
-    const current_user = await database.getUser(req.cookies.spotiPollToken);
-    if (current_user.length > 0) {
-      const current_user_id = current_user[0].id;
-      let trackList = await database.getTrackList();
-      if (trackList.length > 0) {
-          const maxValue = trackList.length - 1;
-          const randomNumber = generateRandomNumber(maxValue);
-          const track = trackList[randomNumber];
-          const track_id = track.id;
-          const vote = parseInt(req.query.vote);
-          await database.addVote(vote, current_user_id, track_id);
+    log("VOTE", req.pbClient.authStore.baseModel.name + " a voté " + req.query.vote)
+    const current_user = req.pbClient.authStore;
+    const current_user_id = current_user.baseModel.id;
+    let trackList = await database.getTrackList();
+    if (trackList.length > 0) {
+        const maxValue = trackList.length - 1;
+        const randomNumber = generateRandomNumber(maxValue);
+        const track = trackList[randomNumber];
+        const track_id = track.id;
+        const vote = parseInt(req.query.vote);
+        await database.addVote(vote, current_user_id, track_id);
         return res.redirect("/poll");
-      }
     }
     return res.redirect("/");
 

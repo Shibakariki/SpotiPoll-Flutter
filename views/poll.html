@@ -309,22 +309,6 @@
 
 <script>
 
-    // Récupérer la valeur du cookie "username"
-    var username = getCookieValue("username");
-
-    // Remplacer le contenu de l'élément avec l'ID "username-placeholder" par la valeur du cookie "username"
-    var usernamePlaceholder = document.getElementById("username-placeholder");
-    if (usernamePlaceholder) {
-        usernamePlaceholder.textContent = username;
-    }
-
-    // Fonction pour récupérer la valeur d'un cookie en fonction de son nom
-    function getCookieValue(name) {
-        var value = "; " + document.cookie;
-        var parts = value.split("; " + name + "=");
-        if (parts.length === 2) return parts.pop().split(";").shift();
-    }
-
     function updatePageWithPollData(data) {
 
         var trackenamePlaceholder = document.getElementById("trackename-placeholder");
@@ -350,6 +334,11 @@
         var trackURL = document.getElementById("trackurl");
         if (trackURL) {
             trackURL.href = data.track.url;
+        }
+
+        var usernamePlaceholder = document.getElementById("username-placeholder");
+        if (usernamePlaceholder) {
+            usernamePlaceholder.textContent = data.name;
         }
 
         refreshBtnColor(data.vote);

@@ -60,45 +60,6 @@ export default class Database {
         }, 'An error occurred while deleting the track:');
     }
 
-    async addUser(userId, userName) {
-        return await handleError(async () => {
-            await this._checkAuthentication();
-            const data = {
-                "id_user": userId, "username": userName
-            };
-            return await this.pb.collection('User').create(data);
-        }, 'An error occurred while adding the user:');
-    }
-
-    async getUser(userId) {
-        return await handleError(async () => {
-            await this._checkAuthentication();
-            return await this.pb.collection('User').getFullList({
-                sort: '-created', filter: `id_user="${userId}"`,
-            });
-        }, 'An error occurred while retrieving the user:');
-    }
-
-    async getUsersList() {
-        return await handleError(async () => {
-            await this._checkAuthentication();
-            return await this.pb.collection('User').getFullList({
-                sort: '-created',
-            });
-        }, 'An error occurred while retrieving the users list:');
-    }
-
-    async deleteUser(userId) {
-        return await handleError(async () => {
-            await this._checkAuthentication();
-            const ids = await this.getUser(userId);
-            for (const user of ids) {
-                console.log(user.id);
-                await this.pb.collection('User').delete(user.id);
-            }
-        }, 'An error occurred while deleting the user:');
-    }
-
     async addVote(vote, userId, trackId) {
         return await handleError(async () => {
             await this._checkAuthentication();
@@ -133,6 +94,7 @@ export default class Database {
             const {beginTime, stopTime} = this._todayRange();
             return await this.pb.collection('Vote').getFullList({
                 filter: `created >= "${beginTime}" && created <= "${stopTime}" && user_id="${userId}"`,
+                sort: '-created',
             });
         }, 'An error occurred while retrieving today\'s votes list:');
     }
