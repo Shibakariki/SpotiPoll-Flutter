@@ -23,7 +23,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Liste des noms de variables d'environnement requises
-const requiredEnvVariables = ['REDIRECT_URL', 'DISCORD_CHANNEL_ID', 'DISCORD_TOKEN', 'SPOTIFY_PLAYLIST_NAME', 'SPOTIFY_CLIENT_SECRET', 'SPOTIFY_CLIENT_ID', 'PB_USERNAME', 'PB_PASSWORD'];
+const requiredEnvVariables = ['REDIRECT_URL', 'SPOTIFY_PLAYLIST_NAME', 'SPOTIFY_CLIENT_SECRET', 'SPOTIFY_CLIENT_ID', 'PB_USERNAME', 'PB_PASSWORD'];
 
 // Fonction de vérification des variables d'environnement
 function checkEnvVariables() {
