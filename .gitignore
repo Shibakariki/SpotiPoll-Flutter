@@ -24,7 +24,7 @@ web_modules/
 # bdd
 views/static/log.txt
 views/static/fichier.json
-#pocketbase.exe
+pocketbase.exe
 #pocketbase
 pb_data/
 pb_migrations/
