@@ -1,0 +1,21 @@
+# fly.toml app configuration file generated for pocketbase-spotipoll on 2023-09-19T21:32:19+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "pocketbase-spotipoll"
+primary_region = "ams"
+
+[build]
+
+[mounts]
+  source = "pb_data"
+  destination = "/pb/pb_data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
