@@ -100,6 +100,21 @@ app.get("/", async (req, res) => {
     return res.sendFile(path.join(__dirname, "views/connect.html"));
 });
 
+app.post('/closevote', async (req, res) => {
+    const key = req.body.key;
+
+    if (key && key === 'iziLeCodeDuBot') {
+        // Ici, mettez le code pour effectuer l'action de suppression
+        await database.log("CLOSE", "Fermeture du vote");
+
+        // Répondre avec succès
+        res.status(200).send({ status: 'success' });
+    } else {
+        // Répondre avec une erreur si la clé est invalide
+        res.status(400).send({ status: 'error', message: 'Invalid key' });
+    }
+});
+
 
 app.get("/user_connection", verifyToken, async (req, res) => {
     if (!spotify.isTokenSet()) {
