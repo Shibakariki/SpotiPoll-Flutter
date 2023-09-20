@@ -86,7 +86,6 @@ async function verifyToken(req, res, next) {
 // TODO : Revoir la logique de connection pour intégrer le verifyToken
 // Et revoir l'utilisation du isTokenSet pour éviter qu'il soit nécessaire à chaque fois
 app.get("/", async (req, res) => {
-    console.log("cc le sanfg");
     if (!spotify.isTokenSet()) {
         return res.sendFile(path.join(__dirname, "views/initAdmin.html"));
     }

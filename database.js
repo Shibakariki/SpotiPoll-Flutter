@@ -1,4 +1,7 @@
 import PocketBase from "pocketbase/cjs";
+import fetch from 'node-fetch';
+global.fetch = fetch;
+
 
 
 const handleError = async (action, errorMessage) => {

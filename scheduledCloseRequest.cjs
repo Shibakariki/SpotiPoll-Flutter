@@ -1,5 +1,5 @@
 
-require('dotenv').config();  // Load environment variables from .env file
+require('dotenv').config();
 
 const axios = require('axios');
 const cron = require('node-cron');

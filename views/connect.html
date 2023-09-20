@@ -58,7 +58,7 @@
 <script>
 
     async function authenticateWithSpotify() {
-        const client = new PocketBase('http://127.0.0.1:8090')
+        const client = new PocketBase('https://pocketbase-spotipoll.fly.dev')
 
         client.authStore.loadFromCookie(document.cookie);
 
