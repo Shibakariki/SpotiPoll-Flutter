@@ -2,8 +2,6 @@ import PocketBase from "pocketbase/cjs";
 import fetch from 'node-fetch';
 global.fetch = fetch;
 
-
-
 const handleError = async (action, errorMessage) => {
     try {
         return await action();
@@ -117,5 +115,23 @@ export default class Database {
             await this._checkAuthentication();
             return await this.pb.collection('users').getFullList({sort: '-created'});
         }, 'An error occurred while retrieving the track list:');
+    }
+
+    async saveCredentials(accessToken, refreshToken) {
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            const data = {
+                "accessToken": accessToken,
+                "refreshToken": refreshToken
+            };
+            return await this.pb.collection('Credentials').create(data);
+        }, 'An error occurred while saving the credentials:');
+    }
+
+    async getCredentials() {
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            return await this.pb.collection('Credentials').getFullList({sort: '-created'});
+        }, 'An error occurred while retrieving the credentials:');
     }
 }

@@ -1,8 +1,9 @@
 import axios from 'axios';
 import queryString from "node:querystring";
 
+
 class SpotifyClient {
-    constructor(redirectURI, clientID, clientSecret) {
+    constructor(redirectURI, clientID, clientSecret, database) {
         this.accessToken = null;
         this.refreshToken = null;
         this.redirectURI = redirectURI;
@@ -18,6 +19,8 @@ class SpotifyClient {
                         playlist-modify-public`;
         this.base64ClientID = Buffer.from(clientID + ":" + clientSecret).toString("base64")
         this.cachedPlaylistId = null;
+
+        this.database = database;
 
         axios.interceptors.response.use(
             response => response,
@@ -50,13 +53,20 @@ class SpotifyClient {
 
             this.accessToken = spotifyResponse.data.access_token
             this.refreshToken = spotifyResponse.data.refresh_token
+
+            await this.database.saveCredentials(this.accessToken, this.refreshToken);
         } catch (error) {
             console.error("Error occurred while fetching the access token:", error);
             throw error;
         }
     }
 
-    isTokenSet() {
+    async isTokenSet() {
+        const credentials = await this.database.getCredentials();
+        if (credentials && credentials.length > 0) {
+            this.accessToken = credentials[0].accessToken;
+            this.refreshToken = credentials[0].refreshToken;
+        }
         return this.accessToken != null && this.refreshToken != null;
     }
 
@@ -87,6 +97,8 @@ class SpotifyClient {
             if (spotifyResponse.data.refresh_token) {
                 this.refreshToken = spotifyResponse.data.refresh_token;
             }
+
+            await this.database.saveCredentials(this.accessToken, this.refreshToken);
         } catch (error) {
             console.error("Failed to refresh access token:", error);
             throw error;

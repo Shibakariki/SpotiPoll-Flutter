@@ -39,7 +39,7 @@ function checkEnvVariables() {
 checkEnvVariables()
 
 const database = new Database();
-const spotify = new Spotify(process.env.REDIRECT_URL, process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET)
+const spotify = new Spotify(process.env.REDIRECT_URL, process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET, database)
 app.listen(1443, () => {
     console.log("App is listening on port 1443! localhost:1443\n");
 });
@@ -86,7 +86,8 @@ async function verifyToken(req, res, next) {
 // TODO : Revoir la logique de connection pour intégrer le verifyToken
 // Et revoir l'utilisation du isTokenSet pour éviter qu'il soit nécessaire à chaque fois
 app.get("/", async (req, res) => {
-    if (!spotify.isTokenSet()) {
+    const tokenSet = await spotify.isTokenSet();
+    if (!tokenSet) {
         return res.sendFile(path.join(__dirname, "views/initAdmin.html"));
     }
 
