@@ -99,12 +99,36 @@ app.get("/", async (req, res) => {
     return res.sendFile(path.join(__dirname, "views/connect.html"));
 });
 
+
 app.post('/closevote', async (req, res) => {
     const key = req.body.key;
 
     if (key && key === 'iziLeCodeDuBot') {
         // Ici, mettez le code pour effectuer l'action de suppression
         await database.log("CLOSE", "Fermeture du vote");
+
+        //TODO: Check nbVote
+        const users = await database.getUsersList();
+        let noteVote = 0;
+        let nbVoting = 0;
+        let track_id = "";
+        for (const user of users) {
+            const todayVotes = await database.getTodayUserVote(user.id);
+            if (todayVotes.length > 0) {
+                nbVoting++;
+                noteVote += todayVotes[0].vote_answer;
+                if (track_id === "") {
+                    track_id = todayVotes[0].track_id;
+                }
+            }
+        }
+
+        if (noteVote < -Math.floor(nbVoting / 2)) {
+            console.log("DELETE");
+            const track = await database.getTrack(track_id);
+            await spotify.deleteTrack(spotify.cachedPlaylistId, track[0].id_track);
+            await database.log("DELETE", "La musique " + track.name + " a été supprimée");
+        }
 
         // Répondre avec succès
         res.status(200).send({ status: 'success' });
@@ -113,6 +137,7 @@ app.post('/closevote', async (req, res) => {
         res.status(400).send({ status: 'error', message: 'Invalid key' });
     }
 });
+
 
 
 app.get("/user_connection", verifyToken, async (req, res) => {

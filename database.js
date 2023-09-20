@@ -40,7 +40,7 @@ export default class Database {
         return await handleError(async () => {
             await this._checkAuthentication();
             return await this.pb.collection('Track').getFullList({
-                sort: '-created', filter: `id_track="${trackId}"`,
+                sort: '-created', filter: `id="${trackId}"`,
             });
         }, 'An error occurred while retrieving the track:');
     }
@@ -110,5 +110,12 @@ export default class Database {
             };
             return await this.pb.collection('Log').create(data);
         }, 'An error occurred while logging the message:');
+    }
+
+    async getUsersList() {
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            return await this.pb.collection('users').getFullList({sort: '-created'});
+        }, 'An error occurred while retrieving the track list:');
     }
 }
