@@ -216,7 +216,7 @@ class SpotifyClient {
     async getPlaylistId(playlistName) {
         if (this.cachedPlaylistId) return this.cachedPlaylistId;
 
-        const allPlaylists = await this.getAllPlaylist();
+        const allPlaylists = await this.getAllPlaylists();
 
         const playlist = allPlaylists.data["items"].find((item) => item.name === playlistName);
 
