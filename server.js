@@ -107,9 +107,12 @@ app.post('/closevote', async (req, res) => {
         await database.log("CLOSE", "Fermeture du vote");
 
         const users = await database.getUsersList();
-        const votedUsers = [];
+        let votedUsers = [];
         let totalVotes = 0;
         let track_id = "";
+        let yes_votes = 0;
+        let no_votes = 0;
+        let blank_votes = 0; 
         for (const user of users) {
             const todayVotes = await database.getTodayUserVote(user.id);
             if (todayVotes.length > 0) {
@@ -117,6 +120,16 @@ app.post('/closevote', async (req, res) => {
                 totalVotes += todayVotes[0].vote_answer;
                 if (track_id === "") {
                     track_id = todayVotes[0].track_id;
+                }
+
+                //Determine vote type
+                switch (todayVotes[0].vote_answer) {
+                    case 1:
+                        yes_votes++;
+                    case -1:
+                        no_votes++;
+                    default:
+                        blank_votes++;
                 }
             }
         }
@@ -128,6 +141,8 @@ app.post('/closevote', async (req, res) => {
             await refreshTrackList();
             await database.log("DELETE", "La musique " + track.name + " a été supprimée");
         }
+
+        await database.addResult(yes_votes, no_votes, blank_votes, track_id)
 
         // Répondre avec succès
         res.status(200).send({ status: 'success' });
@@ -176,14 +191,14 @@ app.get('/refreshTrackList', async (req, res) => {
 
 app.get("/getTrackList", verifyToken, async (req, res) => {
     log("VISIT", req.pbClient.authStore.baseModel.name + " a visité la page /track_list");
-    const allTrack = await database.getTrackList();
+    const allTrack = await database.getTrackList(available_only=true);
     res.send(allTrack);
 });
 
 async function saveTrackList(all_tracks) {
     try {
         let dbTrackList = await database.getTrackList();
-
+        
         // Ajout de nouvelles pistes
         let newTracks = all_tracks.filter(
             track => !dbTrackList.some(dbTrack => dbTrack.id_track === track.id_track)
@@ -197,6 +212,12 @@ async function saveTrackList(all_tracks) {
             dbTrack => !all_tracks.some(track => track.id_track === dbTrack.id_track)
         );
 
+        // Suppression des pistes déjà supprimées
+        let alreadyDeleteTracks = all_tracks.filter(
+            track => dbTrackList.some(dbTrack => (dbTrack.id_track === track.id_track) && (dbTrack.is_delete === true))
+        );
+
+        tracksToRemove = tracksToRemove.concat(alreadyDeleteTracks);
         for (const track of tracksToRemove) {
             await database.removeTrack(track.id);
         }
@@ -255,7 +276,7 @@ app.get("/poll", verifyToken, (req, res) => {
 app.get("/getPollData", verifyToken, async (req, res) => {
     const current_user = req.pbClient.authStore;
     const current_user_id = current_user.baseModel.id;
-    let trackList = await database.getTrackList();
+    let trackList = await database.getTrackList(available_only=true);
     if (trackList.length > 0) {
         const maxValue = trackList.length - 1;
         const randomNumber = generateRandomNumber(maxValue);
@@ -305,7 +326,7 @@ app.get("/vote", verifyToken, async (req, res) => {
     log("VOTE", req.pbClient.authStore.baseModel.name + " a voté " + req.query.vote)
     const current_user = req.pbClient.authStore;
     const current_user_id = current_user.baseModel.id;
-    let trackList = await database.getTrackList();
+    let trackList = await database.getTrackList(available_only=true);
     if (trackList.length > 0) {
         const maxValue = trackList.length - 1;
         const randomNumber = generateRandomNumber(maxValue);

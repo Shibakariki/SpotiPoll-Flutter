@@ -27,10 +27,12 @@ export default class Database {
         }
     }
 
-    async getTrackList() {
+    async getTrackList(available_only=false) {
         return await handleError(async () => {
             await this._checkAuthentication();
-            return await this.pb.collection('Track').getFullList({ sort: '-created' });
+            return await this.pb.collection('Track').getFullList({
+                sort: '-created', filter: `is_delete!="${available_only ? 1 : 2}"`,
+            });
         }, 'An error occurred while retrieving the track list:');
     }
 
@@ -130,5 +132,18 @@ export default class Database {
             await this._checkAuthentication();
             return await this.pb.collection('Credentials').getFullList({ sort: '-created' });
         }, 'An error occurred while retrieving the credentials:');
+    }
+
+    async addResult(yes_vote, no_vote, blank_vote, id_track){
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            const data = {
+                "yes_vote": yes_vote,
+                "no_vote": no_vote,
+                "blank_vote": blank_vote,
+                "id_track": id_track
+            };
+            return await this.pb.collection('Result').create(data);
+        }, 'An error occurred while adding results:');
     }
 }
