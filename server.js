@@ -125,6 +125,7 @@ app.post('/closevote', async (req, res) => {
             console.log("DELETE");
             const track = await database.getTrack(track_id);
             await spotify.deleteTrack(spotify.cachedPlaylistId, track[0].id_track);
+            await refreshTrackList();
             await database.log("DELETE", "La musique " + track.name + " a été supprimée");
         }
 
