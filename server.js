@@ -191,7 +191,7 @@ app.get('/refreshTrackList', async (req, res) => {
 
 app.get("/getTrackList", verifyToken, async (req, res) => {
     log("VISIT", req.pbClient.authStore.baseModel.name + " a visité la page /track_list");
-    const allTrack = await database.getTrackList(available_only=true);
+    const allTrack = await database.getTrackList(true);
     res.send(allTrack);
 });
 
@@ -276,7 +276,7 @@ app.get("/poll", verifyToken, (req, res) => {
 app.get("/getPollData", verifyToken, async (req, res) => {
     const current_user = req.pbClient.authStore;
     const current_user_id = current_user.baseModel.id;
-    let trackList = await database.getTrackList(available_only=true);
+    let trackList = await database.getTrackList(true);
     if (trackList.length > 0) {
         const maxValue = trackList.length - 1;
         const randomNumber = generateRandomNumber(maxValue);
@@ -326,7 +326,7 @@ app.get("/vote", verifyToken, async (req, res) => {
     log("VOTE", req.pbClient.authStore.baseModel.name + " a voté " + req.query.vote)
     const current_user = req.pbClient.authStore;
     const current_user_id = current_user.baseModel.id;
-    let trackList = await database.getTrackList(available_only=true);
+    let trackList = await database.getTrackList(true);
     if (trackList.length > 0) {
         const maxValue = trackList.length - 1;
         const randomNumber = generateRandomNumber(maxValue);
