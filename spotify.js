@@ -113,20 +113,39 @@ class SpotifyClient {
         };
     }
 
-    async getAllPlaylist() {
+    async getAllPlaylists() {
         try {
-            const all_playlists = await axios.get("https://api.spotify.com/v1/me/playlists", {
-                headers: this.getHeaders()
-            });
-            if (all_playlists.data.error) {
-                throw new Error(all_playlists.data.error);
+            const limit = 50; // Maximum permis par l'API de Spotify
+            let offset = 0;
+            let allPlaylists = [];
+
+            while (true) {
+                const response = await axios.get(`https://api.spotify.com/v1/me/playlists?limit=${limit}&offset=${offset}`, {
+                    headers: this.getHeaders()
+                });
+
+                if (response.data.error) {
+                    throw new Error(response.data.error);
+                }
+
+                allPlaylists = allPlaylists.concat(response.data.items);
+
+                if (response.data.items.length < limit) {
+                    // Si le nombre d'items retournés est inférieur à la limite, cela signifie qu'on a récupéré toutes les playlists.
+                    break;
+                }
+
+                offset += limit; // Augmenter l'offset pour la prochaine requête
             }
-            return all_playlists;
+
+            return allPlaylists;
+
         } catch (error) {
             console.error("Une erreur s'est produite lors de la récupération de la liste des playlists:", error);
             throw error;
         }
     }
+
 
     // TODO : Stocker en BDD, la correspondance nom / id spotify
     async getPlaylistTracks(playlist_id) {
