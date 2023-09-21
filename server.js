@@ -195,8 +195,9 @@ async function saveTrackList(all_tracks) {
         let tracksToRemove = dbTrackList.filter(
             dbTrack => !all_tracks.some(track => track.id_track === dbTrack.id_track)
         );
+
         for (const track of tracksToRemove) {
-            await database.removeTrack(track.id_track);
+            await database.removeTrack(track.id);
         }
 
     } catch (error) {

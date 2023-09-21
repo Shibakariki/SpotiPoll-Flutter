@@ -16,7 +16,7 @@ const handleError = async (action, errorMessage) => {
 
 export default class Database {
     constructor() {
-    this.pb = new PocketBase(process.env.PB_URI);
+        this.pb = new PocketBase(process.env.PB_URI);
         this.username = process.env.PB_USERNAME;
         this.password = process.env.PB_PASSWORD;
     }
@@ -30,7 +30,7 @@ export default class Database {
     async getTrackList() {
         return await handleError(async () => {
             await this._checkAuthentication();
-            return await this.pb.collection('Track').getFullList({sort: '-created'});
+            return await this.pb.collection('Track').getFullList({ sort: '-created' });
         }, 'An error occurred while retrieving the track list:');
     }
 
@@ -53,11 +53,8 @@ export default class Database {
     async removeTrack(trackId) {
         return await handleError(async () => {
             await this._checkAuthentication();
-            const ids = await this.getTrack(trackId);
-            for (const track of ids) {
-                console.log(track.id);
-                await this.pb.collection('Track').delete(track.id);
-            }
+            await this.pb.collection('Track').delete(trackId);
+
         }, 'An error occurred while deleting the track:');
     }
 
@@ -74,7 +71,7 @@ export default class Database {
     async getTodayVotesList() {
         return await handleError(async () => {
             await this._checkAuthentication();
-            const {beginTime, stopTime} = this._todayRange();
+            const { beginTime, stopTime } = this._todayRange();
             return await this.pb.collection('Vote').getFullList({
                 filter: `created >= "${beginTime}" && created <= "${stopTime}"`,
             });
@@ -92,7 +89,7 @@ export default class Database {
     async getTodayUserVote(userId) {
         return await handleError(async () => {
             await this._checkAuthentication();
-            const {beginTime, stopTime} = this._todayRange();
+            const { beginTime, stopTime } = this._todayRange();
             return await this.pb.collection('Vote').getFullList({
                 filter: `created >= "${beginTime}" && created <= "${stopTime}" && user_id="${userId}"`,
                 sort: '-created',
@@ -113,7 +110,7 @@ export default class Database {
     async getUsersList() {
         return await handleError(async () => {
             await this._checkAuthentication();
-            return await this.pb.collection('users').getFullList({sort: '-created'});
+            return await this.pb.collection('users').getFullList({ sort: '-created' });
         }, 'An error occurred while retrieving the track list:');
     }
 
@@ -131,7 +128,7 @@ export default class Database {
     async getCredentials() {
         return await handleError(async () => {
             await this._checkAuthentication();
-            return await this.pb.collection('Credentials').getFullList({sort: '-created'});
+            return await this.pb.collection('Credentials').getFullList({ sort: '-created' });
         }, 'An error occurred while retrieving the credentials:');
     }
 }

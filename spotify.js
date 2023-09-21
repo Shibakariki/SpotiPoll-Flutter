@@ -218,8 +218,6 @@ class SpotifyClient {
 
         const allPlaylists = await this.getAllPlaylists();
 
-        console.log(allPlaylists)
-
         const playlist = allPlaylists.find((item) => item.name === playlistName);
 
         if (!playlist) {
