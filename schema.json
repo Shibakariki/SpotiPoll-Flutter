@@ -6,11 +6,13 @@
     "system": false,
     "schema": [
       {
+        "system": false,
         "id": "users_name",
         "name": "name",
         "type": "text",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "min": null,
           "max": null,
@@ -18,11 +20,13 @@
         }
       },
       {
+        "system": false,
         "id": "users_avatar",
         "name": "avatar",
         "type": "file",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "maxSelect": 1,
           "maxSize": 5242880,
@@ -38,11 +42,13 @@
         }
       },
       {
+        "system": false,
         "id": "rbcv7cnl",
         "name": "id_spotify",
         "type": "text",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "min": null,
           "max": null,
@@ -50,11 +56,13 @@
         }
       },
       {
+        "system": false,
         "id": "3zmjxpuc",
         "name": "avatarUrl",
         "type": "text",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "min": null,
           "max": null,
@@ -86,11 +94,13 @@
     "system": false,
     "schema": [
       {
+        "system": false,
         "id": "odrzfrba",
         "name": "id_track",
         "type": "text",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "min": null,
           "max": null,
@@ -98,11 +108,13 @@
         }
       },
       {
+        "system": false,
         "id": "avt6vgye",
         "name": "name",
         "type": "text",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "min": null,
           "max": null,
@@ -110,11 +122,13 @@
         }
       },
       {
+        "system": false,
         "id": "sylfuazn",
         "name": "artist",
         "type": "text",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "min": null,
           "max": null,
@@ -122,11 +136,13 @@
         }
       },
       {
+        "system": false,
         "id": "4cbrowug",
         "name": "adder",
         "type": "text",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "min": null,
           "max": null,
@@ -134,11 +150,13 @@
         }
       },
       {
+        "system": false,
         "id": "bdivzyrw",
         "name": "url",
         "type": "text",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "min": null,
           "max": null,
@@ -163,11 +181,13 @@
     "system": false,
     "schema": [
       {
+        "system": false,
         "id": "cdrvvk9b",
         "name": "type",
         "type": "text",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "min": null,
           "max": null,
@@ -175,11 +195,13 @@
         }
       },
       {
+        "system": false,
         "id": "kwaim96n",
         "name": "message",
         "type": "text",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "min": null,
           "max": null,
@@ -202,22 +224,27 @@
     "system": false,
     "schema": [
       {
+        "system": false,
         "id": "rp7loiyu",
         "name": "vote_answer",
         "type": "number",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "min": null,
-          "max": null
+          "max": null,
+          "noDecimal": false
         }
       },
       {
+        "system": false,
         "id": "8nqzkait",
         "name": "track_id",
         "type": "relation",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "collectionId": "scfb3e7xghreu19",
           "cascadeDelete": false,
@@ -227,17 +254,135 @@
         }
       },
       {
+        "system": false,
         "id": "o3tcvhzl",
         "name": "user_id",
         "type": "relation",
-        "system": false,
         "required": false,
+        "presentable": false,
+        "unique": false,
         "options": {
           "collectionId": "_pb_users_auth_",
           "cascadeDelete": false,
           "minSelect": null,
           "maxSelect": 1,
           "displayFields": []
+        }
+      }
+    ],
+    "indexes": [],
+    "listRule": null,
+    "viewRule": null,
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
+    "options": {}
+  },
+  {
+    "id": "3hri1gvtx15nbdr",
+    "name": "Credentials",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "vnb921dp",
+        "name": "accessToken",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "hht6iemo",
+        "name": "refreshToken",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      }
+    ],
+    "indexes": [],
+    "listRule": null,
+    "viewRule": null,
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
+    "options": {}
+  },
+  {
+    "id": "kx7byapj7p8p4xv",
+    "name": "Result",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "zg1k5c80",
+        "name": "yes_vote",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "noDecimal": false
+        }
+      },
+      {
+        "system": false,
+        "id": "c2xbncpb",
+        "name": "no_vote",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "noDecimal": false
+        }
+      },
+      {
+        "system": false,
+        "id": "r3vq2i5i",
+        "name": "blank_vote",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "noDecimal": false
+        }
+      },
+      {
+        "system": false,
+        "id": "5gcmh1cb",
+        "name": "id_track",
+        "type": "relation",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "collectionId": "scfb3e7xghreu19",
+          "cascadeDelete": false,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
         }
       }
     ],
