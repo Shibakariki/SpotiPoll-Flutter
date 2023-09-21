@@ -218,7 +218,9 @@ class SpotifyClient {
 
         const allPlaylists = await this.getAllPlaylists();
 
-        const playlist = allPlaylists.data["items"].find((item) => item.name === playlistName);
+        console.log(allPlaylists)
+
+        const playlist = allPlaylists.find((item) => item.name === playlistName);
 
         if (!playlist) {
             throw new Error(`You do not have access to the playlist ${playlistName}`);
