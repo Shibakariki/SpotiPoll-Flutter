@@ -123,15 +123,16 @@ app.post('/closevote', async (req, res) => {
                 }
 
                 //Determine vote type
-                switch (todayVotes[0].vote_answer) {
-                    case 1:
+                if (todayVotes[0].vote_answer){
                         yes_votes++;
-                    case -1:
+		}
+		else if (todayVotes[0].vote_answer){
                         no_votes++;
-                    default:
+		}
+		else{
                         blank_votes++;
-                }
-            }
+		}
+	    }
         }
 
         if (totalVotes < -Math.floor(votedUsers.length / 2)) {
