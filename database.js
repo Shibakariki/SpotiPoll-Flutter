@@ -81,7 +81,7 @@ export default class Database {
     }
 
     _todayRange() {
-        const today = new Date().toISOString().slice(0, 10)-1;
+        const today = new Date().toISOString().slice(0, 10);
         return {
             beginTime: `${today} 00:00:00.000`,
             stopTime: `${today} 23:59:59.999`
@@ -152,7 +152,7 @@ export default class Database {
             await this._checkAuthentication();
             const { beginTime, stopTime } = this._todayRange();
             return await this.pb.collection('Result').getFullList({
-                filter: `created >= "${beginTime}" && created <= "${stopTime}"`,
+                //filter: `created >= "${beginTime}" && created <= "${stopTime}"`,
                 sort: '-created',
             });
         }, 'An error occurred while retrieving the result:');
