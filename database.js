@@ -81,7 +81,7 @@ export default class Database {
     }
 
     _todayRange() {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = new Date().toISOString().slice(0, 10)-1;
         return {
             beginTime: `${today} 00:00:00.000`,
             stopTime: `${today} 23:59:59.999`
