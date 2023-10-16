@@ -361,7 +361,7 @@ function log(type, message) {
 
 app.get("/result", verifyToken, async (req, res) => {
     let resultList = await database.getTodayResult();
-    res.send(JSON.stringify(resultList))
+    res.send(resultList)
 });
 
 
