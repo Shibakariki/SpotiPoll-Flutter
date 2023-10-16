@@ -13,26 +13,9 @@ const axios = require('axios');
 const cron = require('cron');
 const fs = require("fs");
 
-class User {
-  constructor(id,vote,name,push_vote) {
-    this.id = id;
-    this.name = name;
-    this.vote = vote;
-    this.push_vote = push_vote;
-  }
-}
-
 client.once('ready', () => {
     console.log("C'est tout good");
  });
-
-
-// 00 min hr * * *
-let checkVote = new cron.CronJob('00 59 23 * * *', async () => {
-  const res = await axios.post(redirectURI+"delete", {
-    code: process.env.DELETE_SECURE_CODE
-  });
-});
 
 let resultMessage = new cron.CronJob('00 00 00 * * *', async () => {
   const res = await axios.get(redirectURI+"result");

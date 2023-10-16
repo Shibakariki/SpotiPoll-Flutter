@@ -360,12 +360,13 @@ app.get("/result", verifyToken, async (req, res) => {
     votesList.sort((a, b) => new Date(b.created) - new Date(a.created));
 
     // Parcourez chaque vote et stockez le dernier vote de chaque utilisateur pour chaque morceau
-    votesList.forEach(vote => {
-        if (!lastVoteForUserPerTrack[vote.track_id]) {
+    votesList.forEach(async vote => {
+        let track_name = await database.getTrack(vote.track_id)
+        if (!lastVoteForUserPerTrack[track_name]) {
             lastVoteForUserPerTrack[vote.track_id] = {};
         }
 
-        if (!lastVoteForUserPerTrack[vote.track_id][vote.user_id]) {
+        if (!lastVoteForUserPerTrack[track_name][vote.user_id]) {
             lastVoteForUserPerTrack[vote.track_id][vote.user_id] = vote.vote_answer;
         }
     });
