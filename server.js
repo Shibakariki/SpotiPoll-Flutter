@@ -135,6 +135,16 @@ app.post('/closevote', async (req, res) => {
 	    }
         }
 
+        if (track_id == ""){
+            let trackList = await database.getTrackList(true);
+            if (trackList.length > 0) {
+                const maxValue = trackList.length - 1;
+                const randomNumber = generateRandomNumber(maxValue);
+                const track = trackList[randomNumber];
+                track_id = track.id;
+            }
+        }
+
         if (totalVotes < -Math.floor(votedUsers.length / 2)) {
             console.log("DELETE");
             const track = await database.getTrack(track_id);
@@ -152,7 +162,6 @@ app.post('/closevote', async (req, res) => {
         res.status(400).send({ status: 'error', message: 'Invalid key' });
     }
 });
-
 
 app.get("/user_connection", verifyToken, async (req, res) => {
     if (!spotify.isTokenSet()) {
@@ -351,33 +360,8 @@ function log(type, message) {
 }
 
 app.get("/result", verifyToken, async (req, res) => {
-    let votesList = await database.getTodayVotesList();
-
-    // Un dictionnaire pour stocker le dernier vote de chaque utilisateur pour chaque morceau
-    let lastVoteForUserPerTrack = {};
-
-    // Triez la liste des votes en fonction de leur date de création
-    votesList.sort((a, b) => new Date(b.created) - new Date(a.created));
-
-    // Parcourez chaque vote et stockez le dernier vote de chaque utilisateur pour chaque morceau
-    votesList.forEach(async vote => {
-        let track_name = await database.getTrack(vote.track_id)
-        if (!lastVoteForUserPerTrack[track_name]) {
-            lastVoteForUserPerTrack[vote.track_id] = {};
-        }
-
-        if (!lastVoteForUserPerTrack[track_name][vote.user_id]) {
-            lastVoteForUserPerTrack[vote.track_id][vote.user_id] = vote.vote_answer;
-        }
-    });
-
-    // Calculez la somme des derniers votes pour chaque morceau
-    let sumOfLastVotesPerTrack = {};
-    for (let trackId in lastVoteForUserPerTrack) {
-        sumOfLastVotesPerTrack[trackId] = Object.values(lastVoteForUserPerTrack[trackId]).reduce((sum, vote) => sum + vote, 0);
-    }
-
-    res.send(JSON.stringify(sumOfLastVotesPerTrack))
+    let resultList = await database.getTodayResult();
+    res.send(JSON.stringify(resultList))
 });
 
 

@@ -146,4 +146,15 @@ export default class Database {
             return await this.pb.collection('Result').create(data);
         }, 'An error occurred while adding results:');
     }
+
+    async getTodayResult(){
+        return await handleError(async () => {
+            await this._checkAuthentication();
+            const { beginTime, stopTime } = this._todayRange();
+            return await this.pb.collection('Result').getFullList({
+                filter: `created >= "${beginTime}" && created <= "${stopTime}"`,
+                sort: '-created',
+            });
+        }, 'An error occurred while retrieving the result:');
+    }
 }
