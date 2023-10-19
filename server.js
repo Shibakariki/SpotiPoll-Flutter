@@ -372,7 +372,7 @@ app.get("/result", verifyToken, async (req, res) => {
         else{
             result_vote = "conservé";
         }
-        return result_vote.send("Pour le titre "+track["name"]+" de "+track["artist"]+", il y a eu "+vote["yes_vote"]+" vote pour | "+vote["no_vote"]+" vote contre | "+vote["blank_vote"]+" vote blanc => le titre est "+result_vote);
+        return res.send("Pour le titre "+track["name"]+" de "+track["artist"]+", il y a eu "+vote["yes_vote"]+" vote pour | "+vote["no_vote"]+" vote contre | "+vote["blank_vote"]+" vote blanc => le titre est "+result_vote);
     }
     else{
         return res.send("Aucun résultat pour le moment ?_?");
