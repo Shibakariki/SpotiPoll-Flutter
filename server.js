@@ -365,6 +365,7 @@ app.get("/result", verifyToken, async (req, res) => {
         let vote = resultList[0]
         let track = await database.getTrack(vote["id_track"])[0]
         if (track === undefined){
+            console.log(track)
             let totalVotes = vote["yes_vote"] - vote["no_vote"]
             let result_vote = "";
             if (totalVotes < -Math.floor(vote["yes_vote"] + vote["no_vote"] + vote["blank_vote"] / 2)){
