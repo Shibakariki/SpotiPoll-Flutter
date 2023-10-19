@@ -8,6 +8,7 @@ const url = process.env.DELETE_URL;
 const key = process.env.DELETE_SECURE_CODE;
 
 function executeRequest() {
+    console.log(url);
     axios.post(url, {
         key: key
     })

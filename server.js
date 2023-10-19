@@ -362,9 +362,10 @@ function log(type, message) {
 app.get("/result", verifyToken, async (req, res) => {
     let resultList = await database.getTodayResult();
     if (resultList.length > 0){
-        let vote = resultList[0]
-        let track = await database.getTrack(vote["id_track"])
-        if (track === undefined){
+        let vote = resultList[0];
+        let tracks = await database.getTrack(vote["id_track"]);
+	let track = tracks[0];
+        if (track != undefined){
             let totalVotes = vote["yes_vote"] - vote["no_vote"]
             let result_vote = "";
             if (totalVotes < -Math.floor(vote["yes_vote"] + vote["no_vote"] + vote["blank_vote"] / 2)){
