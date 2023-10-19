@@ -364,8 +364,6 @@ app.get("/result", verifyToken, async (req, res) => {
     if (resultList.length > 0){
         let vote = resultList[0]
         let track = await database.getTrack(vote["id_track"])
-        console.log(track)
-        console.log(track[0].name)
         if (track === undefined){
             let totalVotes = vote["yes_vote"] - vote["no_vote"]
             let result_vote = "";
@@ -375,7 +373,7 @@ app.get("/result", verifyToken, async (req, res) => {
             else{
                 result_vote = "conservé";
             }
-            return res.send("Pour le titre "+track["name"]+" de "+track["artist"]+", il y a eu "+vote["yes_vote"]+" vote pour | "+vote["no_vote"]+" vote contre | "+vote["blank_vote"]+" vote blanc => le titre est "+result_vote);
+            return res.send("Pour le titre "+track.name+" de "+track.artist+", il y a eu "+vote["yes_vote"]+" vote pour | "+vote["no_vote"]+" vote contre | "+vote["blank_vote"]+" vote blanc => le titre est "+result_vote);
         }
     }
     return res.send("Aucun résultat pour le moment ?_?");
