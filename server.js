@@ -359,27 +359,33 @@ function log(type, message) {
     })
 }
 
-app.get("/result", verifyToken, async (req, res) => {
-    let resultList = await database.getTodayResult();
-    if (resultList.length > 0){
-        let vote = resultList[0];
-        let tracks = await database.getTrack(vote["id_track"]);
-	let track = tracks[0];
-        if (track != undefined){
-            let totalVotes = vote["yes_vote"] - vote["no_vote"]
-            let result_vote = "";
-            if (totalVotes < -Math.floor(vote["yes_vote"] + vote["no_vote"] + vote["blank_vote"] / 2)){
-                result_vote = "supprimé";
-            }
-            else{
-                result_vote = "conservé";
-            }
-            return res.send("Pour le titre "+track.name+" de "+track.artist+", il y a eu "+vote["yes_vote"]+" vote pour | "+vote["no_vote"]+" vote contre | "+vote["blank_vote"]+" vote blanc => le titre est "+result_vote);
-        }
-    }
-    return res.send("Aucun résultat pour le moment ?_?");
-});
+app.post("/result", verifyToken, async (req, res) => {
+    const key = req.body.key;
 
+    if (key && key === 'iziLeCodeDuBot') {        
+        let resultList = await database.getTodayResult();
+        if (resultList.length > 0){
+            let vote = resultList[0];
+            let tracks = await database.getTrack(vote["id_track"]);
+            let track = tracks[0];
+            if (track != undefined){
+                let totalVotes = vote["yes_vote"] - vote["no_vote"]
+                let result_vote = "";
+                if (totalVotes < -Math.floor(vote["yes_vote"] + vote["no_vote"] + vote["blank_vote"] / 2)){
+                    result_vote = "supprimé";
+                }
+                else{
+                    result_vote = "conservé";
+                }
+                return res.send("Pour le titre "+track.name+" de "+track.artist+", il y a eu "+vote["yes_vote"]+" vote pour | "+vote["no_vote"]+" vote contre | "+vote["blank_vote"]+" vote blanc => le titre est "+result_vote);
+            }
+        }
+        return res.send("Aucun résultat pour le moment ?_?");
+    } else {
+        // Répondre avec une erreur si la clé est invalide
+        res.status(400).send({ status: 'error', message: 'Invalid key' });
+    }
+});
 
 app.post("/test", (req, res) => {
     console.log("test");

@@ -7,7 +7,7 @@ const client = new Discord.Client({ intents: [
     Discord.GatewayIntentBits.MessageContent,
   ]})
 const token = process.env.DISCORD_TOKEN;
-const redirectURI = process.env.REDIRECT_URL
+const resultURI = process.env.RESULT_URL
 
 const axios = require('axios');
 const cron = require('cron');
@@ -17,8 +17,8 @@ client.once('ready', () => {
     console.log("C'est tout good");
  });
 
-let resultMessage = new cron.CronJob('00 00 00 * * *', async () => {
-  const res = await axios.get(redirectURI+"result");
+let resultMessage = new cron.CronJob('00 00 * * * *', async () => {
+  const res = await axios.get(resultURI);
   console.log(res.data);
   const channel = client.channels.cache.get(process.env.DISCORD_CHANNEL_ID);
   channel.send(res.data);
