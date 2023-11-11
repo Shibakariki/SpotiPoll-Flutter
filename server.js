@@ -359,7 +359,7 @@ function log(type, message) {
     })
 }
 
-app.post("/result", verifyToken, async (req, res) => {
+app.post("/result", async (req, res) => {
     const key = req.body.key;
 
     if (key && key === 'iziLeCodeDuBot') {        
@@ -383,9 +383,29 @@ app.post("/result", verifyToken, async (req, res) => {
         return res.send("Aucun résultat pour le moment ?_?");
     } else {
         // Répondre avec une erreur si la clé est invalide
-        res.status(400).send({ status: 'error', message: 'Invalid key' });
+        return res.status(400).send({ status: 'error', message: 'Invalid key' });
     }
 });
+
+app.post("/getUsersWithMissedVote", async (req, res) => {
+    const key = req.body.key;
+
+    if (key && key === 'iziLeCodeDuBot') {        
+        let users = await database.getUsersList();
+        let usersWithMissedVote = [];
+        for (const user of users) {
+            const todayVotes = await database.getTodayUserVote(user.id);
+            if (todayVotes.length > 0) {
+                usersWithMissedVote.push(user.id_spotify);
+            }
+        }
+        return res.send(usersWithMissedVote);
+    } else {
+        // Répondre avec une erreur si la clé est invalide
+        return res.status(400).send({ status: 'error', message: 'Invalid key' });
+    }
+});
+
 
 app.post("/test", (req, res) => {
     console.log("test");
