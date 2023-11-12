@@ -395,7 +395,7 @@ app.post("/getUsersWithMissedVote", async (req, res) => {
         let usersWithMissedVote = [];
         for (const user of users) {
             const todayVotes = await database.getTodayUserVote(user.id);
-            if (todayVotes.length > 0) {
+            if (todayVotes.length === 0) {
                 usersWithMissedVote.push(user.id_spotify);
             }
         }

@@ -1,101 +1,64 @@
+
+require('dotenv').config();
 //Discord imports
 const Discord = require('discord.js');
-const client = new Discord.Client({ intents: [
-    Discord.GatewayIntentBits.Guilds,
-    Discord.GatewayIntentBits.GuildMessages,
-    Discord.GatewayIntentBits.GuildMessageReactions,
-    Discord.GatewayIntentBits.MessageContent,
-  ]})
-const token = process.env.DISCORD_TOKEN;
-const resultURI = process.env.RESULT_URL
-
 const axios = require('axios');
 const cron = require('cron');
-const fs = require("fs");
+
+const client = new Discord.Client({ intents: [
+      Discord.GatewayIntentBits.Guilds,
+      Discord.GatewayIntentBits.GuildMessages,
+      Discord.GatewayIntentBits.GuildMessageReactions,
+      Discord.GatewayIntentBits.MessageContent,
+  ], disableEveryone: false})
+
+const token = "MTE3Mjg1NTExMDIzMDA4NTcyMg.Ge0oG0.oh89w25mr8Fdc4KYZf_DpXBVnT87Ar0fg41nqQ"
+const resultURI = process.env.RESULT_URL
+const votedURI = process.env.VOTED_URL
+const code = process.env.DELETE_SECURE_CODE
+const discord_users_ids = process.env.DISCORD_USER_IDS.split(' ');
 
 client.once('ready', () => {
-    console.log("C'est tout good");
- });
+  console.log("C'est tout good");
+});
 
-let resultMessage = new cron.CronJob('00 00 * * * *', async () => {
-  const res = await axios.get(resultURI);
-  console.log(res.data);
+// Message de résultat
+new cron.CronJob('00 00 00 * * *', async () => {
+const res = await axios.post(resultURI, {key: code});
+console.log(res.data);
+const channel = client.channels.cache.get(process.env.DISCORD_CHANNEL_ID);
+channel.send(res.data);
+}).start();
+
+// Reminder
+new cron.CronJob('00 00 22 * * *', async () => {
   const channel = client.channels.cache.get(process.env.DISCORD_CHANNEL_ID);
-  channel.send(res.data);
-});
+  channel.send('@everyone Dernier rappel pour voter ! Le vote se cloture à 23h59 \n https://mennessi.iiens.net/vote');
+  }).start();
 
-let sendReminderDM = new cron.CronJob('00 44 23 * * *', async () => {
-  //Send DM to a user with is id
-  const user1 = await client.users.fetch('292409251916152832'); //Axel
-  const user2 = await client.users.fetch('557505245505257476'); //Céline
-  const user3 = await client.users.fetch('882166624717770812'); //Maxime
-  var users = [];
+async function sendDM(){
+  var discordIdToFetch = [];
 
-  var jsonData = [];
-  if ( !fs.existsSync('./views/static/fichier.json')) { fs.writeFile(filePath, jsonData, 'utf8', () => {}) }
-  fs.readFile('./views/static/fichier.json', 'utf8', (err, data) => {
-    if (err) {
-      console.error(err)
-      return
-    }
-    parseJson = JSON.parse(data);
-    var usersData = parseJson["users"].map(user => new User(user.id,user.name,user.vote,user.push_vote));
+    let spotiPollUsersWithMissedVote = await axios.post(votedURI, {key: code});
 
-    usersData.forEach(user => {
-      if (user.vote === 0)
-      {
-        switch (user.id) {
-          case 'uudinn':
-            users.push(user1);
-            break;
-          case '11183209297':
-            users.push(user2);
-            break;
-          case '8oyik21m36g0xygzkhomv46ah':
-            users.push(user3);
-            break;
-          default:
-            break;
-        }
+    for (const discordUser of discord_users_ids) {
+      spotify_id = discordUser.split(".")[0];
+      discord_id = discordUser.split(".")[1];
+      if (spotiPollUsersWithMissedVote.data.includes(spotify_id)) {
+        discordIdToFetch.push(discord_id);
       }
-    });
+    }
 
-    users.forEach(user => { 
-      user.send('Yooo! Tu as oublié de voter aujourd\'hui! (vite plus que 15min) => https://mennessi.iiens.net/poll');
-    });
+    for (const discordId of discordIdToFetch) {
+      const user = await client.users.fetch(discordId);
+      user.send("Tu n'as pas encore voté, n'oublie pas ! \n https://mennessi.iiens.net/vote");
+    }
+}
 
-  });
-});
-
-let sendResultDM = new cron.CronJob('00 00 00 * * *', async () => {
-  const res = await axios.get(redirectURI+"result");
-  const user1 = await client.users.fetch('292409251916152832'); //Axel
-  const user2 = await client.users.fetch('557505245505257476'); //Céline
-  const user3 = await client.users.fetch('882166624717770812'); //Maxime
-  var users = [user1,user2,user3];
-
-  users.forEach(user => {
-    user.send(res.data);
-  }
-  );
-});
-
-// let testDM = new cron.CronJob('00 11 20 * * *', async () => {
-//   const user1 = await client.users.fetch('292409251916152832'); //Axel
-//   const user2 = await client.users.fetch('557505245505257476'); //Céline
-//   const user3 = await client.users.fetch('882166624717770812'); //Maxime
-//   var users = [user1,user2,user3];
-
-//   users.forEach(user => {
-//     user.send("test");
-//   }
-//   );
-// });
-
-checkVote.start()
-resultMessage.start()
-sendReminderDM.start()
-sendResultDM.start()
-// testDM.start()
+  // Envoie de DM à tous les utilisateurs n'ayant pas voté
+new cron.CronJob('00 00 16 * * *', async () => {
+    //Send DM to a user with is id
+    sendDM();
+}).start();
 
  client.login(token);
