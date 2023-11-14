@@ -123,16 +123,16 @@ app.post('/closevote', async (req, res) => {
                 }
 
                 //Determine vote type
-                if (todayVotes[0].vote_answer){
-                        yes_votes++;
-		}
-		else if (todayVotes[0].vote_answer){
-                        no_votes++;
-		}
-		else{
-                        blank_votes++;
-		}
-	    }
+                if (todayVotes[0].vote_answer == 1){
+                    yes_votes++;
+                }
+                else if (todayVotes[0].vote_answer == -1){
+                    no_votes++;
+                }
+                else{
+                    blank_votes++;
+                }
+	        }
         }
 
         if (track_id == ""){
