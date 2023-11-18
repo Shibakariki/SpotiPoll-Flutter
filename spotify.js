@@ -76,6 +76,11 @@ class SpotifyClient {
     }
 
     async refreshAccessToken() {
+        if (this.refreshToken == null) {
+            console.log("Refreshing access token...");
+            var credentials = await this.database.getCredentials();
+            this.refreshToken = credentials[0].refreshToken;
+        }
         try {
             const spotifyResponse = await axios.post("https://accounts.spotify.com/api/token", queryString.stringify({
                 grant_type: "refresh_token",
@@ -231,6 +236,14 @@ class SpotifyClient {
 
     async deleteTrack(playlist_id, track_id) {
         try {
+            if (this.accessToken == null || this.refreshToken == null)
+            {
+                await this.refreshAccessToken();
+            }
+            if (playlist_id == null)
+            {
+                var playlist_id = await this.getPlaylistId(process.env.SPOTIFY_PLAYLIST_NAME)
+            }
             const response = await axios({
                 method: "delete",
                 url: `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`,

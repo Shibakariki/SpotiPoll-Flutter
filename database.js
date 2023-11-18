@@ -52,10 +52,10 @@ export default class Database {
         }, 'An error occurred while adding the track:');
     }
 
-    async removeTrack(trackId) {
+    async updateIsDelete(trackId) {
         return await handleError(async () => {
             await this._checkAuthentication();
-            await this.pb.collection('Track').delete(trackId);
+            await this.pb.collection('Track').update(trackId, { is_delete: 1 });
 
         }, 'An error occurred while deleting the track:');
     }

@@ -149,8 +149,8 @@ app.post('/closevote', async (req, res) => {
             console.log("DELETE");
             const track = await database.getTrack(track_id);
             await spotify.deleteTrack(spotify.cachedPlaylistId, track[0].id_track);
-            await refreshTrackList();
             await database.log("DELETE", "La musique " + track.name + " a été supprimée");
+            await refreshTrackList();
         }
 
         await database.addResult(yes_votes, no_votes, blank_votes, track_id)
@@ -229,7 +229,7 @@ async function saveTrackList(all_tracks) {
 
         tracksToRemove = tracksToRemove.concat(alreadyDeleteTracks);
         for (const track of tracksToRemove) {
-            await database.removeTrack(track.id);
+            await database.updateIsDelete(track.id);
         }
 
     } catch (error) {
