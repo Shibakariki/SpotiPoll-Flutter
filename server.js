@@ -123,16 +123,16 @@ app.post('/closevote', async (req, res) => {
                 }
 
                 //Determine vote type
-                if (todayVotes[0].vote_answer){
-                        yes_votes++;
-		}
-		else if (todayVotes[0].vote_answer){
-                        no_votes++;
-		}
-		else{
-                        blank_votes++;
-		}
-	    }
+                if (todayVotes[0].vote_answer == 1){
+                    yes_votes++;
+                }
+                else if (todayVotes[0].vote_answer == -1){
+                    no_votes++;
+                }
+                else{
+                    blank_votes++;
+                }
+	        }
         }
 
         if (track_id == ""){
@@ -145,7 +145,7 @@ app.post('/closevote', async (req, res) => {
             }
         }
 
-        if (totalVotes < -Math.floor(votedUsers.length / 2)) {
+        if (totalVotes <= -Math.floor(votedUsers.length / 2)) {
             console.log("DELETE");
             const track = await database.getTrack(track_id);
             await spotify.deleteTrack(spotify.cachedPlaylistId, track[0].id_track);
@@ -371,7 +371,7 @@ app.post("/result", async (req, res) => {
             if (track != undefined){
                 let totalVotes = vote["yes_vote"] - vote["no_vote"]
                 let result_vote = "";
-                if (totalVotes < -Math.floor(vote["yes_vote"] + vote["no_vote"] + vote["blank_vote"] / 2)){
+                if (totalVotes <= -Math.floor(vote["yes_vote"] + vote["no_vote"] + vote["blank_vote"] / 2)){
                     result_vote = "supprimé";
                 }
                 else{
