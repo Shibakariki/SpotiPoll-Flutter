@@ -43,23 +43,35 @@ new cron.CronJob("00 00 22 * * *", async () => {
   }
   }).start();
 
+// DM Reminders
 async function sendDM(){
   var discordIdToFetch = [];
 
-    let spotiPollUsersWithMissedVote = await axios.post(votedURI, {key: code});
+  const res = await axios.get(trackURI)
+  let reminderMsg = "";
+  if (res != null){
+    reminderMsg = "@everyone Dernier rappel pour voter ! Le vote se cloture à 23h59 \n Le vote est sur le titre "+track.name+" de "+track.artist+"\n https://mennessi.iiens.net/vote";
+  }
+  else{
+    reminderMsg = "@everyone Dernier rappel pour voter ! Le vote se cloture à 23h59 \n https://mennessi.iiens.net/vote";
+  }
 
-    for (const discordUser of discord_users_ids) {
-      spotify_id = discordUser.split(".")[0];
-      discord_id = discordUser.split(".")[1];
-      if (spotiPollUsersWithMissedVote.data.includes(spotify_id)) {
-        discordIdToFetch.push(discord_id);
-      }
-    }
 
-    for (const discordId of discordIdToFetch) {
-      const user = await client.users.fetch(discordId);
-      user.send("Tu n'as pas encore voté, n'oublie pas !\n Le vote est sur le titre "+track.name+" de "+track.artist+" \n https://mennessi.iiens.net/vote");
+
+  let spotiPollUsersWithMissedVote = await axios.post(votedURI, {key: code});
+
+  for (const discordUser of discord_users_ids) {
+    spotify_id = discordUser.split(".")[0];
+    discord_id = discordUser.split(".")[1];
+    if (spotiPollUsersWithMissedVote.data.includes(spotify_id)) {
+      discordIdToFetch.push(discord_id);
     }
+  }
+
+  for (const discordId of discordIdToFetch) {
+    const user = await client.users.fetch(discordId);
+    user.send(reminderMsg);
+  }
 }
 
   // Envoie de DM à tous les utilisateurs n"ayant pas voté
