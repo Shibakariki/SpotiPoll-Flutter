@@ -304,7 +304,7 @@ app.get("/getPollData", verifyToken, async (req, res) => {
     res.redirect("/");
 });
 
-app.get("/getTodayTrack", verifyToken, async (req, res) => {
+app.get("/getTodayTrack", async (req, res) => {
     return res.send(await getTodayTrack());
 });
 
