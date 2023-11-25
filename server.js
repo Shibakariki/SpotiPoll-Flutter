@@ -304,8 +304,18 @@ app.get("/getPollData", verifyToken, async (req, res) => {
     res.redirect("/");
 });
 
-app.get("/getTodayTrack", async (req, res) => {
-    return res.send(await getTodayTrack());
+app.post("/getTodayTrack", async (req, res) => {
+    const key = req.body.key;
+
+    if (key && key === 'iziLeCodeDuBot') {
+        let track = await getTodayTrack();
+        console.log(track);
+        return res.send(track);
+    }
+    else {
+        // Répondre avec une erreur si la clé est invalide
+        return res.status(400).send({ status: 'error', message: 'Invalid key' });
+    }
 });
 
 function generateRandomNumber(maxValue) {

@@ -34,36 +34,22 @@ channel.send(res.data);
 // Reminder
 new cron.CronJob("00 00 22 * * *", async () => {
   const channel = client.channels.cache.get(process.env.DISCORD_CHANNEL_ID);
-  const res = await axios.get(trackURI)
-  if (res != null){
-    channel.send("@everyone Dernier rappel pour voter ! Le vote se cloture à 23h59 \n Le vote est sur le titre "+track.name+" de "+track.artist+"\n https://mennessi.iiens.net/vote");
-  }
-  else{
-    channel.send("@everyone Dernier rappel pour voter ! Le vote se cloture à 23h59 \n https://mennessi.iiens.net/vote");
-  }
+  let reminderMsg = await defineMsg();
+  channel.send(reminderMsg);
   }).start();
 
 // DM Reminders
 async function sendDM(){
   var discordIdToFetch = [];
 
-  const res = await axios.get(trackURI)
-  let reminderMsg = "";
-  if (res != null){
-    reminderMsg = "@everyone Dernier rappel pour voter ! Le vote se cloture à 23h59 \n Le vote est sur le titre "+track.name+" de "+track.artist+"\n https://mennessi.iiens.net/vote";
-  }
-  else{
-    reminderMsg = "@everyone Dernier rappel pour voter ! Le vote se cloture à 23h59 \n https://mennessi.iiens.net/vote";
-  }
-
-
+  let reminderMsg = await defineMsg();
 
   let spotiPollUsersWithMissedVote = await axios.post(votedURI, {key: code});
 
   for (const discordUser of discord_users_ids) {
     spotify_id = discordUser.split(".")[0];
     discord_id = discordUser.split(".")[1];
-    if (spotiPollUsersWithMissedVote.data.includes(spotify_id)) {
+    if (spotiPollUsersWithMissedVote.data.includes(spotify_id) && discord_id == "292409251916152832") {
       discordIdToFetch.push(discord_id);
     }
   }
@@ -74,8 +60,28 @@ async function sendDM(){
   }
 }
 
+async function defineMsg(isDM = true){
+  const res = await axios.post(trackURI, {key: code});
+  let reminderMsg = "";
+  if (isDM) {
+    reminderMsg = "Tu n'as pas encore voté, n'oublie pas !";
+  }
+  else{
+    reminderMsg = "@everyone Dernier rappel pour voter !";
+  }
+  if (res != null){
+    track = res.data;
+    reminderMsg += " Le vote se cloture à 23h59 \n Le vote est sur le titre "+track.name+" de "+track.artist+"\n https://mennessi.iiens.net/vote";
+  }
+  else{
+    reminderMsg += " Le vote se cloture à 23h59 \n https://mennessi.iiens.net/vote";
+  }
+  return reminderMsg;
+}
+
   // Envoie de DM à tous les utilisateurs n"ayant pas voté
 new cron.CronJob("00 00 16 * * *", async () => {
+  // new cron.CronJob("00 45 11 * * *", async () => {
     //Send DM to a user with is id
     sendDM();
 }).start();
