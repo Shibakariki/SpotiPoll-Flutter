@@ -136,11 +136,8 @@ app.post('/closevote', async (req, res) => {
         }
 
         if (track_id == ""){
-            let trackList = await database.getTrackList(true);
-            if (trackList.length > 0) {
-                const maxValue = trackList.length - 1;
-                const randomNumber = generateRandomNumber(maxValue);
-                const track = trackList[randomNumber];
+            const track = await getTodayTrack();
+            if (track != null){
                 track_id = track.id;
             }
         }
@@ -286,12 +283,8 @@ app.get("/poll", verifyToken, (req, res) => {
 app.get("/getPollData", verifyToken, async (req, res) => {
     const current_user = req.pbClient.authStore;
     const current_user_id = current_user.baseModel.id;
-    let trackList = await database.getTrackList(true);
-    if (trackList.length > 0) {
-        const maxValue = trackList.length - 1;
-        const randomNumber = generateRandomNumber(maxValue);
-        const track = trackList[randomNumber];
-
+    const track = await getTodayTrack();
+    if (track != null){
         const current_user_vote = await database.getTodayUserVote(current_user_id);
         let vote;
         if (current_user_vote.length === 0) {
@@ -309,6 +302,10 @@ app.get("/getPollData", verifyToken, async (req, res) => {
         return res.send(response);
     }
     res.redirect("/");
+});
+
+app.get("/getTodayTrack", async (req, res) => {
+    return res.send(await getTodayTrack());
 });
 
 function generateRandomNumber(maxValue) {
@@ -332,15 +329,23 @@ function generateRandomNumber(maxValue) {
     return Math.round((randomNumber / (Math.pow(2, 256) - 1)) * maxValue);
 }
 
+async function getTodayTrack(){
+    let trackList = await database.getTrackList(true);
+    let track = null
+    if (trackList.length > 0) {
+        const maxValue = trackList.length - 1;
+        const randomNumber = generateRandomNumber(maxValue);
+        track = trackList[randomNumber];
+    }
+    return track
+}
+
 app.get("/vote", verifyToken, async (req, res) => {
     log("VOTE", req.pbClient.authStore.baseModel.name + " a voté " + req.query.vote)
     const current_user = req.pbClient.authStore;
     const current_user_id = current_user.baseModel.id;
-    let trackList = await database.getTrackList(true);
-    if (trackList.length > 0) {
-        const maxValue = trackList.length - 1;
-        const randomNumber = generateRandomNumber(maxValue);
-        const track = trackList[randomNumber];
+    const track = await getTodayTrack();
+    if (track != null){
         const track_id = track.id;
         const vote = parseInt(req.query.vote);
         await database.addVote(vote, current_user_id, track_id);
