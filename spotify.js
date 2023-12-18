@@ -182,6 +182,7 @@ class SpotifyClient {
                 "artist": track.artists[0].name,
                 "adder": userNameCache[item.added_by.id],
                 "url": track.external_urls.spotify,
+                "image_url": track.album.images[1].url,
             };
         });
     }
