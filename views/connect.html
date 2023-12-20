@@ -71,19 +71,25 @@
         console.log(client.authStore.isValid);
         console.log(client.authStore.token);
         console.log(client.authStore.model.id);
-        console.log(authData);
+        console.log(authData.meta);
         console.log(client.authStore);
+
+        let avatarUrl = authData.meta.avatarUrl;
+
+        if (authData.meta.rawUser.images.length > 0) {
+            avatarUrl = authData.meta.rawUser.images[1].url;
+        }
 
         const data = {
             "name": authData.meta.name,
             "id_spotify" : authData.meta.id,
             "email": authData.meta.email,
-            "avatarUrl" : authData.meta.avatarUrl,
+            "avatarUrl" : avatarUrl,
         };
 
         await client.collection('users').update(client.authStore.model.id, data);
 
-        window.location.href = '/user_connection';
+        //window.location.href = '/user_connection';
     }
 
     document.addEventListener('DOMContentLoaded', function() {
