@@ -13,10 +13,11 @@ jobs:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'dev'
+          flutter-version: '3.16.4'
+          channel: 'stable'
       - run: flutter config --enable-web
       - run: flutter pub get
-      - run: flutter build web --release
+      - run: flutter build -v web --release --base-href /SpotiPoll/
       - run: |
           cd build/web
           git init
