@@ -4,7 +4,7 @@ A new Flutter project.
 
 # Demo
 
-![DEMO](RPReplay_Final1704726389.mov)
+[![DEMO](RPReplay_Final1704726389.mov)](RPReplay_Final1704726389.mov)
 
 ## Getting Started
 
